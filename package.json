@@ -1,0 +1,42 @@
+{
+  "name": "venaarauhassa",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint",
+    "start": "next start",
+    "format": "prettier -w ."
+  },
+  "dependencies": {
+    "@ant-design/cssinjs": "^1.17.2",
+    "@ant-design/icons": "^5.2.6",
+    "antd": "^5.11.1",
+    "bent": "^7.3.12",
+    "dayjs": "^1.11.10",
+    "geist": "^1.1.0",
+    "next": "^13.4.19",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-responsive": "^9.0.2",
+    "react-svgmt": "^2.0.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bent": "^7.3.8",
+    "@types/eslint": "^8.44.2",
+    "@types/node": "^18.16.0",
+    "@types/react": "^18.2.20",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.3.0",
+    "@typescript-eslint/parser": "^6.3.0",
+    "autoprefixer": "^10.4.14",
+    "eslint": "^8.47.0",
+    "eslint-config-next": "^13.4.19",
+    "postcss": "^8.4.27",
+    "prettier": "^3.0.0",
+    "typescript": "^5.1.6"
+  },
+  "packageManager": "npm@9.5.0"
+}
