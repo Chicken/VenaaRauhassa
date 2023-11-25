@@ -1,5 +1,5 @@
-import React, { type Dispatch, type SetStateAction } from "react";
 import { Modal } from "antd";
+import { type Dispatch, type SetStateAction } from "react";
 
 const LegendItem = ({ color, text }: { color: string; text: string }) => {
   return (
@@ -42,6 +42,10 @@ export const LegendModal = ({
   return (
     <>
       <Modal title="Tietoisku" open={IsOpen} onOk={handleOk} onCancel={handleCancel} footer={null}>
+        <p>
+          Voit klikata paikkaa nähdäksesi sen varauksen asemalta toiselle. Voit myös rajata
+          asemaväliä liikuttamalla liukusäätimen päätepisteitä. 
+        </p>
         <LegendItem color={"#9399b2"} text={"Paikka ei saatavilla"} />
         <LegendItem color={"#f38ba8"} text={"Paikka varattu valitulle matkalle"} />
         <LegendItem color={"#fab387"} text={"Paikan vaunu ei kulje määränpäähän saakka"} />
