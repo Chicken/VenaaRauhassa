@@ -10,6 +10,7 @@ import { SvgLoader, SvgProxy } from "react-svgmt";
 import { ZodError } from "zod";
 import { getStations, getTrainOnDate } from "~/lib/vr";
 import { LegendModal } from "../../../components/LegendModal";
+import { hueShift } from "~/lib/colors";
 
 function getSeatId(event: MouseEvent) {
   if (!(event.target instanceof Element)) {
@@ -98,7 +99,9 @@ export default function TrainPage({
   useEffect(() => {
     if (!initialSelectedSeat) return;
     const timeout = setTimeout(() => {
-      const seatEl = document.querySelector(`[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}_shape`);
+      const seatEl = document.querySelector(
+        `[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}_shape`
+      );
       if (!seatEl) return;
       seatEl.scrollIntoView({
         behavior: "smooth",
@@ -111,7 +114,9 @@ export default function TrainPage({
 
   useEffect(() => {
     if (!selectedSeat) return;
-    const seatEl = document.querySelector(`[data-wagon="${selectedSeat[0]}"] #seat_${selectedSeat[1]}_shape`);
+    const seatEl = document.querySelector(
+      `[data-wagon="${selectedSeat[0]}"] #seat_${selectedSeat[1]}_shape`
+    );
     if (!seatEl) return;
     const timeout = setTimeout(() => {
       seatEl.scrollIntoView({
@@ -442,7 +447,13 @@ export default function TrainPage({
                           if (statusRange.every((r) => r === "reserved")) return "#f38ba8";
                           if (statusRange.every((r) => r === "open")) return "#a6e3a1";
                           if (statusRange.includes("unavailable")) return "#fab387";
-                          return "#f9e2af";
+                          return hueShift(
+                            "#f9e2af",
+                            (20 * 8 / statusRange.length) *
+                              ((statusRange.length * statusRange.length) / 8 / 2 -
+                                statusRange.filter((r) => r === "reserved").length *
+                                  (statusRange.length / 8))
+                          );
                         })()}
                         stroke={isSelected ? "#313244" : "#1b50af"}
                         stroke-width={isSelected ? "4px" : "1px"}
