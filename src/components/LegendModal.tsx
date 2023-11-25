@@ -44,7 +44,7 @@ export const LegendModal = ({
       <Modal title="Tietoisku" open={IsOpen} onOk={handleOk} onCancel={handleCancel} footer={null}>
         <p>
           Voit klikata paikkaa nähdäksesi sen varauksen asemalta toiselle. Voit myös rajata
-          asemaväliä liikuttamalla liukusäätimen päätepisteitä. 
+          asemaväliä liikuttamalla liukusäätimen päätepisteitä.
         </p>
         <LegendItem color={"#9399b2"} text={"Paikka ei saatavilla"} />
         <LegendItem color={"#f38ba8"} text={"Paikka varattu valitulle matkalle"} />

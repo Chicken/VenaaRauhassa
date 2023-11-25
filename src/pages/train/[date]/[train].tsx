@@ -51,15 +51,6 @@ export default function TrainPage({
   const [selectedSeat, setSelectedSeat] = useState<number[] | null>(initialSelectedSeat ?? null);
 
   useEffect(() => {
-    function clickListener(event: MouseEvent) {
-      setSelectedSeat(getSeatId(event));
-    }
-
-    document.getElementById("wagon-map")?.addEventListener("click", clickListener);
-    return () => document.getElementById("wagon-map")?.removeEventListener("click", clickListener);
-  }, []);
-
-  useEffect(() => {
     if (!train) return;
     function safeShallow(url: string) {
       if (decodeURIComponent(router.asPath) !== url)
@@ -98,7 +89,9 @@ export default function TrainPage({
   useEffect(() => {
     if (!initialSelectedSeat) return;
     const timeout = setTimeout(() => {
-      const seatEl = document.querySelector(`[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}_shape`);
+      const seatEl = document.querySelector(
+        `[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}_shape`
+      );
       if (!seatEl) return;
       seatEl.scrollIntoView({
         behavior: "smooth",
@@ -111,7 +104,9 @@ export default function TrainPage({
 
   useEffect(() => {
     if (!selectedSeat) return;
-    const seatEl = document.querySelector(`[data-wagon="${selectedSeat[0]}"] #seat_${selectedSeat[1]}_shape`);
+    const seatEl = document.querySelector(
+      `[data-wagon="${selectedSeat[0]}"] #seat_${selectedSeat[1]}_shape`
+    );
     if (!seatEl) return;
     const timeout = setTimeout(() => {
       seatEl.scrollIntoView({
@@ -185,6 +180,75 @@ export default function TrainPage({
   useEffect(() => {
     router.prefetch(date ? `/?date=${date}` : "/").catch(console.error);
   }, [router, date]);
+
+  useEffect(() => {
+    const el = document.getElementById("wagon-map");
+    if (!el) return;
+    el.style.cursor = "grab";
+
+    let pos = { left: 0, x: 0 };
+    let timestamp = 0;
+    let animationId: number | null = null;
+
+    const mouseDownHandler = (e: MouseEvent) => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      el.style.cursor = "grabbing";
+      el.style.userSelect = "none";
+      timestamp = Date.now();
+
+      pos = {
+        left: el.scrollLeft,
+        x: e.clientX,
+      };
+
+      document.addEventListener("mousemove", mouseMoveHandler);
+      document.addEventListener("mouseup", mouseUpHandler);
+    };
+
+    let velocity = 0;
+    let prevLeft = 0;
+    const mouseMoveHandler = (e: MouseEvent) => {
+      const dx = e.clientX - pos.x;
+      prevLeft = el.scrollLeft;
+      el.scrollLeft = pos.left - dx;
+      velocity = el.scrollLeft - prevLeft;
+    };
+
+    const mouseUpHandler = (e: MouseEvent) => {
+      if (Date.now() - timestamp < 150 && Math.abs(e.clientX - pos.x) < 50)
+        setSelectedSeat(getSeatId(e));
+
+      el.style.cursor = "grab";
+      el.style.removeProperty("user-select");
+
+      document.removeEventListener("mousemove", mouseMoveHandler);
+      document.removeEventListener("mouseup", mouseUpHandler);
+
+      animationId = requestAnimationFrame(slideScroll);
+    };
+
+    const slideScroll = () => {
+      if (Math.abs(velocity) < 0.1) {
+        animationId = null;
+        return;
+      }
+      el.scrollLeft += velocity;
+      velocity *= 0.95;
+      animationId = requestAnimationFrame(slideScroll);
+    };
+
+    el.addEventListener("mousedown", mouseDownHandler);
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+      document.removeEventListener("mousemove", mouseMoveHandler);
+      document.removeEventListener("mouseup", mouseUpHandler);
+      el.removeEventListener("mousedown", mouseDownHandler);
+    };
+  }, []);
 
   if (error) {
     return (
