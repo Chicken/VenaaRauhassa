@@ -444,8 +444,8 @@ export default function TrainPage({
                           if (statusRange.includes("unavailable")) return "#fab387";
                           return "#f9e2af";
                         })()}
-                        stroke={isSelected ? "#89dceb" : "#1b50af"}
-                        stroke-width={isSelected ? "5px" : "1px"}
+                        stroke={isSelected ? "#313244" : "#1b50af"}
+                        stroke-width={isSelected ? "4px" : "1px"}
                       />
                     );
                   })}
