@@ -98,9 +98,7 @@ export default function TrainPage({
   useEffect(() => {
     if (!initialSelectedSeat) return;
     const timeout = setTimeout(() => {
-      const wagonEl = document.querySelector(`[data-wagon="${initialSelectedSeat[0]}"]`);
-      if (!wagonEl) return;
-      const seatEl = wagonEl.querySelector(`#seat_${initialSelectedSeat[1]}_shape`);
+      const seatEl = document.querySelector(`[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}_shape`);
       if (!seatEl) return;
       seatEl.scrollIntoView({
         behavior: "smooth",
@@ -113,9 +111,7 @@ export default function TrainPage({
 
   useEffect(() => {
     if (!selectedSeat) return;
-    const wagonEl = document.querySelector(`[data-wagon="${selectedSeat[0]}"]`);
-    if (!wagonEl) return;
-    const seatEl = wagonEl.querySelector(`#seat_${selectedSeat[1]}_shape`);
+    const seatEl = document.querySelector(`[data-wagon="${selectedSeat[0]}"] #seat_${selectedSeat[1]}_shape`);
     if (!seatEl) return;
     const timeout = setTimeout(() => {
       seatEl.scrollIntoView({
