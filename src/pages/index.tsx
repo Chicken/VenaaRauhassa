@@ -5,7 +5,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
-import { getJSON } from "~/lib/http";
+import { getInitialTrains } from "~/lib/vr";
 
 const pickerStyle: React.CSSProperties = {
   width: "100%",
@@ -31,12 +31,7 @@ export default function Home({
   const router = useRouter();
   const [sloganText, setSloganText] = useState<string | null>(null);
 
-  const [allTrains, setAllTrains] = useState<
-    {
-      value: string;
-      label: string;
-    }[]
-  >(initialTrains);
+  const [allTrains, setAllTrains] = useState(initialTrains);
   const [trainsLoaded, setTrainsLoaded] = useState<boolean>(true);
   const [trainLoading, setTrainLoading] = useState<boolean>(false);
 
@@ -46,19 +41,8 @@ export default function Home({
   const getTrains = useCallback(async (date: string) => {
     setTrainsLoaded(false);
 
-    const res = (await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`)) as {
-      trainNumber: number;
-      trainType: string;
-    }[];
-
-    setAllTrains(
-      res
-        .filter((t) => ["IC", "S"].includes(t.trainType))
-        .map((t) => ({
-          value: t.trainNumber.toString(),
-          label: t.trainType + t.trainNumber,
-        }))
-    );
+    const res = await getInitialTrains(date);
+    setAllTrains(res);
 
     setTrainsLoaded(true);
   }, []);
@@ -162,9 +146,19 @@ export default function Home({
           optionFilterProp="children"
           onSelect={(_value, option) => setSelectedTrain(option.value)}
           onClear={() => setSelectedTrain(null)}
-          filterOption={(input, option) =>
-            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-          }
+          filterOption={(input, option) => {
+            if (!option) return false;
+
+            const terms = [
+              option.label,
+              option.arrivalStationName,
+              option.arrivalStationShortCode,
+              option.departureStationName,
+              option.departureStationShortCode,
+            ];
+
+            return terms.some((term) => term.toLowerCase().includes(input.toLowerCase()));
+          }}
           filterSort={(optionA, optionB) => parseInt(optionA.value) - parseInt(optionB.value)}
           options={allTrains}
         />
@@ -241,19 +235,12 @@ export const getServerSideProps = (async ({ res, query }) => {
       : undefined
   ).format("YYYY-MM-DD");
 
-  const initialTrains = (await getJSON(
-    `https://rata.digitraffic.fi/api/v1/trains/${initialDate}`
-  )) as { trainNumber: number; trainType: string }[];
+  const initialTrains = await getInitialTrains(initialDate);
 
   return {
     props: {
       initialDate,
-      initialTrains: initialTrains
-        .filter((t) => ["IC", "S"].includes(t.trainType))
-        .map((t) => ({
-          value: t.trainNumber.toString(),
-          label: t.trainType + t.trainNumber,
-        })),
+      initialTrains,
     },
   };
 }) satisfies GetServerSideProps<{
