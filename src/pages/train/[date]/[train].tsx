@@ -450,9 +450,9 @@ export default function TrainPage({
                           return hueShift(
                             "#f9e2af",
                             (20 * 8 / statusRange.length) *
-                              ((statusRange.length * statusRange.length) / 8 / 2 -
+                              (8 / 2 -
                                 statusRange.filter((r) => r === "reserved").length *
-                                  (statusRange.length / 8))
+                                  8 / statusRange.length)
                           );
                         })()}
                         stroke={isSelected ? "#313244" : "#1b50af"}
