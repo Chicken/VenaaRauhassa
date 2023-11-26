@@ -157,7 +157,11 @@ export default function Home({
               option.departureStationShortCode,
             ];
 
-            return terms.some((term) => term.toLowerCase().includes(input.toLowerCase()));
+            const keywords = input.split(" ");
+            if (keywords.length === 0) return false;
+            return keywords.every((keyword) =>
+              terms.some((term) => term.toLowerCase().includes(keyword.toLowerCase()))
+            );
           }}
           filterSort={(optionA, optionB) => parseInt(optionA.value) - parseInt(optionB.value)}
           options={allTrains}
