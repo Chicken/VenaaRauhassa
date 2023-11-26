@@ -196,10 +196,11 @@ export async function getInitialTrains(date: string) {
       const arrivalTime = formatShortFinnishTime(arrival.scheduledTime);
 
       const longDepartureStationName =
-        stations[departure.stationShortCode]?.replace("asema", "").trim() ??
+        stations[departure.stationShortCode]?.replace(" asema", "").trim() ??
         departure.stationShortCode;
       const longArrivalStationName =
-        stations[arrival.stationShortCode]?.replace("asema", "").trim() ?? arrival.stationShortCode;
+        stations[arrival.stationShortCode]?.replace(" asema", "").trim() ??
+        arrival.stationShortCode;
 
       return {
         value: t.trainNumber.toString(),
