@@ -459,11 +459,7 @@ export default function TrainPage({
                                   8 / statusRange.length)
                           );
                         })()}
-                        stroke={isSelected ? "#313244" : (
-                          allReserved || allOpen ? (
-                            allReserved ? "#f38ba8" : "#a6e3a1"
-                          ) : "#1b50af"
-                        )}
+                        stroke={isSelected ? "#313244" : "#1b50af"}
                         stroke-width={isSelected ? "4px" : (
                           allReserved || allOpen ? "2px" : "1px"
                         )}
