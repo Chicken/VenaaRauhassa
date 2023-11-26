@@ -46,9 +46,9 @@ export const LegendModal = ({
           Voit klikata paikkaa nähdäksesi sen varauksen asemalta toiselle. Voit myös rajata
           asemaväliä liikuttamalla liukusäätimen päätepisteitä. 
         </p>
-        <LegendItem color={"#9399b2"} text={"Paikka ei saatavilla"} />
+        <LegendItem color={"#45475a"} text={"Paikka ei saatavilla"} />
+        <LegendItem color={"#9399b2"} text={"Paikan vaunu ei kulje määränpäähän saakka"} />
         <LegendItem color={"#f38ba8"} text={"Paikka varattu valitulle matkalle"} />
-        <LegendItem color={"#fab387"} text={"Paikan vaunu ei kulje määränpäähän saakka"} />
         <LegendItem color={"#f9e2af"} text={"Paikka osittain varattu valitulle matkalle"} />
         <LegendItem color={"#a6e3a1"} text={"Paikka vapaa"} />
       </Modal>
