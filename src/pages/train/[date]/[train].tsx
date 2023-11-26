@@ -438,15 +438,19 @@ export default function TrainPage({
                       ? seat.number === selectedSeat[1] && wagon.number === selectedSeat[0]
                       : false;
 
+                    const allUnavailable = statusRange.every((r) => r === "unavailable");
+                    const allReserved = statusRange.every((r) => r === "reserved");
+                    const allOpen = statusRange.every((r) => r === "open");
+
                     return (
                       <SvgProxy
                         key={seat.number + "-bg"}
                         selector={`#seat_${seat.number}_shape`}
                         fill={(() => {
-                          if (statusRange.every((r) => r === "unavailable")) return "#9399b2";
-                          if (statusRange.every((r) => r === "reserved")) return "#f38ba8";
-                          if (statusRange.every((r) => r === "open")) return "#a6e3a1";
-                          if (statusRange.includes("unavailable")) return "#fab387";
+                          if (allUnavailable) return "#45475a";
+                          if (allReserved) return "#f38ba8";
+                          if (allOpen) return "#a6e3a1";
+                          if (statusRange.includes("unavailable")) return "#9399b2";
                           return hueShift(
                             "#f9e2af",
                             (20 * 8 / statusRange.length) *
@@ -455,8 +459,14 @@ export default function TrainPage({
                                   8 / statusRange.length)
                           );
                         })()}
-                        stroke={isSelected ? "#313244" : "#1b50af"}
-                        stroke-width={isSelected ? "4px" : "1px"}
+                        stroke={isSelected ? "#313244" : (
+                          allReserved || allOpen ? (
+                            allReserved ? "#f38ba8" : "#a6e3a1"
+                          ) : "#1b50af"
+                        )}
+                        stroke-width={isSelected ? "4px" : (
+                          allReserved || allOpen ? "2px" : "1px"
+                        )}
                       />
                     );
                   })}
