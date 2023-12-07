@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import { getJSON } from "~/lib/http";
+import Image from "next/image";
 
 const pickerStyle: React.CSSProperties = {
   width: "100%",
@@ -117,12 +118,17 @@ export default function Home({
         align={"center"}
         vertical={true}
       >
-        <Link href="/" style={{ color: "unset" }}>
-          <h1 style={{ marginBottom: "0px" }}>
-            <span style={{ color: "#00a149" }}>V</span>enaa
-            <span style={{ color: "#00a149" }}>R</span>auhassa
-          </h1>
-        </Link>
+        <div style={{ width: "calc(250px + 10vw)" }}>
+          <Link href="/" style={{ color: "unset" }}>
+            <Image
+              style={{ width: "100%", height: "auto" }}
+              src="/vr_logo.png"
+              width={475}
+              height={70}
+              alt="VenaaRauhassa"
+            />
+          </Link>
+        </div>
         <p
           style={{
             fontSize: "14px",
