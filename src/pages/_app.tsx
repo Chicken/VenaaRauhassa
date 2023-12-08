@@ -23,6 +23,7 @@ const App: AppType = ({ Component, pageProps }) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#00a149" />
         <meta property="og:type" content="website" />
+        <link rel="icon" href="/vr_favicon.png" sizes="any" />
       </Head>
 
       <Layout className="layout" style={{ height: "100vh" }}>
