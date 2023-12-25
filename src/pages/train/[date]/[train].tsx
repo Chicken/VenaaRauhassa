@@ -307,7 +307,7 @@ export default function TrainPage({
   );
   const ecoSeatObjs = wagons.flatMap((w) =>
     w.floors.flatMap((f) =>
-      f.seats.filter((seat) => seat.producType === "ECO_CLASS_SEAT" && seat.services.length === 0)
+      f.seats.filter((seat) => seat.productType === "ECO_CLASS_SEAT" && seat.services.length === 0)
     )
   );
   const ecoSeats = ecoSeatObjs.length;
@@ -677,7 +677,7 @@ export const getServerSideProps = (async (context) => {
                   return rowPlace.bookable ? "open" : "reserved";
                 }),
                 type: place.type,
-                producType: place.productType,
+                productType: place.productType,
                 services: place.services,
                 position: place.position,
               })),
@@ -743,7 +743,6 @@ export const getServerSideProps = (async (context) => {
         }[];
         wagons: {
           number: number;
-          placeType: string;
           floors: {
             number: number;
             image: string;
