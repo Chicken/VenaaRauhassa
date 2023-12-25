@@ -26,10 +26,21 @@ function getSeatId(event: MouseEvent) {
       }
     } else if (target.id.startsWith("seat_")) {
       seat = target.id.slice(5);
+    } else if (target.id.startsWith("bed_")) {
+      seat = target.id.slice(4);
     }
     target = target.parentElement!;
   }
   return null;
+}
+
+function getSeatSelector(type: string, number: number): string {
+  switch (type) {
+    case "BED":
+      return `#highlight_${number}`;
+    default:
+      return `#seat_${number}_shape`;
+  }
 }
 
 export default function TrainPage({
@@ -296,7 +307,7 @@ export default function TrainPage({
   );
   const ecoSeatObjs = wagons.flatMap((w) =>
     w.floors.flatMap((f) =>
-      f.seats.filter((seat) => seat.type === "ECO_CLASS_SEAT" && seat.services.length === 0)
+      f.seats.filter((seat) => seat.producType === "ECO_CLASS_SEAT" && seat.services.length === 0)
     )
   );
   const ecoSeats = ecoSeatObjs.length;
@@ -500,7 +511,7 @@ export default function TrainPage({
                     return (
                       <SvgProxy
                         key={seat.number + "-bg"}
-                        selector={`#seat_${seat.number}_shape`}
+                        selector={getSeatSelector(seat.type, seat.number)}
                         fill={(() => {
                           if (statusRange.every((r) => r === "unavailable")) return "#9399b2";
                           if (statusRange.every((r) => r === "reserved")) return "#f38ba8";
@@ -633,7 +644,8 @@ export const getServerSideProps = (async (context) => {
       }));
 
     const wagons = Object.values(train.timeTableRows[0]!.wagons)
-      .sort((w1, w2) => w1.order - w2.order)
+      .filter(w => w.placeType !== "VEHICLE")
+      .sort((w1, w2) => w2.order - w1.order)
       .map((wagon) => ({
         number: wagon.number,
         floors: Array(wagon.floorCount)
@@ -664,7 +676,8 @@ export const getServerSideProps = (async (context) => {
                     );
                   return rowPlace.bookable ? "open" : "reserved";
                 }),
-                type: place.productType,
+                type: place.type,
+                producType: place.productType,
                 services: place.services,
                 position: place.position,
               })),
@@ -730,6 +743,7 @@ export const getServerSideProps = (async (context) => {
         }[];
         wagons: {
           number: number;
+          placeType: string;
           floors: {
             number: number;
             image: string;
@@ -737,9 +751,10 @@ export const getServerSideProps = (async (context) => {
               number: number;
               section: number;
               status: ("open" | "reserved" | "unavailable")[];
+              productType: string;
               type: string;
               services: string[];
-              position: string;
+              position: string | null;
             }[];
           }[];
         }[];

@@ -37,6 +37,5 @@
     "postcss": "^8.4.27",
     "prettier": "^3.0.0",
     "typescript": "^5.1.6"
-  },
-  "packageManager": "npm@9.5.0"
+  }
 }

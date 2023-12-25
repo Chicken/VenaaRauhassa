@@ -35,6 +35,7 @@ body {
 
 .wagon-svg {
   height: 200px;
+  margin-top: auto;
 
   @media (max-width: 768px) {
     height: 170px;

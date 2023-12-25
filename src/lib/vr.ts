@@ -13,6 +13,7 @@ const wagonResponseSchema = z.object({
         z.string(),
         z.object({
           number: z.number(),
+          placeType: z.string().nullable(),
           type: z.string(),
           floorCount: z.number(),
           order: z.number(),
@@ -22,9 +23,10 @@ const wagonResponseSchema = z.object({
               logicalSection: z.number(),
               number: z.number(),
               bookable: z.boolean(),
+              type: z.string(),
               productType: z.string(),
               services: z.array(z.string()),
-              position: z.string(),
+              position: z.string().optional().transform(v => v ?? null),
             })
           ),
         })
