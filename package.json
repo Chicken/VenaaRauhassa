@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/cssinjs": "^1.17.2",
     "@ant-design/icons": "^5.2.6",
+    "@vercel/analytics": "^1.1.1",
     "antd": "^5.11.1",
     "bent": "^7.3.12",
     "dayjs": "^1.11.10",
