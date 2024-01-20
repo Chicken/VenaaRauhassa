@@ -2,19 +2,17 @@ import type { GetServerSidePropsContext } from "next";
 import { getJSON } from "~/lib/http";
 
 function generateSiteMap(paths: string[]): string {
-  return `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${paths
-      .map(
-        (path) =>
-          `
-      <url>
-          <loc>https://venaarauhassa.fi${path}</loc>
-          <changefreq>hourly</changefreq>
-      </url>`
-      )
-      .join("")}
-    </urlset>
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${paths
+    .map(
+      (path) => `
+  <url>
+    <loc>https://venaarauhassa.fi${path}</loc>
+    <changefreq>hourly</changefreq>
+  </url>`
+    )
+    .join("")}
+  </urlset>
   `;
 }
 
