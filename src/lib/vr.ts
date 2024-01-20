@@ -26,7 +26,10 @@ const wagonResponseSchema = z.object({
               type: z.string(),
               productType: z.string(),
               services: z.array(z.string()),
-              position: z.string().optional().transform(v => v ?? null),
+              position: z
+                .string()
+                .optional()
+                .transform((v) => v ?? null),
             })
           ),
         })

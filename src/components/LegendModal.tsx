@@ -2,13 +2,15 @@ import { Modal, Switch } from "antd";
 import { type Dispatch, type SetStateAction } from "react";
 
 const LegendItem = ({
-  color,
   text,
-  gradient = false,
+  bgColor,
+  bgGradient = false,
+  borderColor,
 }: {
-  color: string;
   text: string;
-  gradient?: boolean;
+  bgColor?: string;
+  bgGradient?: boolean;
+  borderColor?: string;
 }) => {
   return (
     <div
@@ -21,10 +23,11 @@ const LegendItem = ({
         style={{
           width: "25px",
           height: "25px",
-          borderRadius: "12.5px",
-          [gradient ? "background" : "backgroundColor"]: color,
+          borderRadius: "50%",
+          [bgGradient ? "background" : "backgroundColor"]: bgColor ?? "rgba(0,0,0,0)",
           marginRight: "10px",
           alignSelf: "center",
+          border: borderColor ? `2px solid ${borderColor}` : "none",
         }}
       />
       <p style={{ fontWeight: 500 }}>{text}</p>
@@ -51,6 +54,8 @@ export const LegendModal = ({
     setIsOpen(false);
   };
 
+  // TODO: add border colors
+
   return (
     <>
       <Modal title="Tietoisku" open={IsOpen} onOk={handleOk} onCancel={handleCancel} footer={null}>
@@ -58,19 +63,23 @@ export const LegendModal = ({
           Voit klikata paikkaa nähdäksesi sen varauksen asemalta toiselle. Voit myös rajata
           asemaväliä liikuttamalla liukusäätimen päätepisteitä.
         </p>
-        <LegendItem color={"#45475a"} text={"Paikka ei saatavilla"} />
-        <LegendItem color={"#9399b2"} text={"Paikan vaunu ei kulje määränpäähän saakka"} />
-        <LegendItem color={"#f38ba8"} text={"Paikka varattu valitulle matkalle"} />
+        <LegendItem bgColor={"#45475a"} text={"Paikka ei saatavilla"} />
+        <LegendItem bgColor={"#9399b2"} text={"Paikan vaunu ei kulje määränpäähän saakka"} />
+        <LegendItem bgColor={"#f38ba8"} text={"Paikka varattu valitulle matkalle"} />
         {heatmapEnabled ? (
           <LegendItem
-            color="linear-gradient(180deg, #f38ba8, #f9e2af, #a6e3a1)"
-            gradient={true}
+            bgGradient
+            bgColor="linear-gradient(180deg, #f38ba8, #f9e2af, #a6e3a1)"
             text={"Paikka osittain varattu valitulle matkalle"}
           />
         ) : (
-          <LegendItem color={"#f9e2af"} text={"Paikka osittain varattu valitulle matkalle"} />
+          <LegendItem bgColor={"#f9e2af"} text={"Paikka osittain varattu valitulle matkalle"} />
         )}
-        <LegendItem color={"#a6e3a1"} text={"Paikka vapaa"} />
+        <LegendItem bgColor={"#a6e3a1"} text={"Paikka vapaa"} />
+        <LegendItem
+          borderColor={"#820909"}
+          text={"Erikoispaikka (ekstra, ravintolavaunu, hytti, eläin)"}
+        />
         <p>
           Vaihda keltaisesta väliväristä edistyneempään lämpökarttaan:&nbsp;
           <Switch checked={heatmapEnabled} onChange={() => setHeatmapEnabled((s) => !s)} />

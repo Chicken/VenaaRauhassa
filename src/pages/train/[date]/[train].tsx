@@ -39,7 +39,7 @@ function getSeatId(event: MouseEvent) {
 function getSeatSelector(type: string, number: number): string {
   switch (type) {
     case "BED":
-      return `#highlight_${number}`;
+      return `#highlight_${number} + path`;
     default:
       return `#seat_${number}_shape`;
   }
@@ -504,8 +504,6 @@ export default function TrainPage({
                   {/* background */}
                   <SvgProxy selector="svg > g > path" fill="f9f9f9" />
                   {floor.seats.map((seat) => {
-                    // TODO: mark special seats such as extra class and pets
-
                     const statusRange = seat.status.slice(timeRange[0], timeRange[1]);
 
                     const isSelected = selectedSeat
@@ -516,7 +514,17 @@ export default function TrainPage({
                     const allReserved = statusRange.every((r) => r === "reserved");
                     const allOpen = statusRange.every((r) => r === "open");
 
-                    return (
+                    const extra = seat.productType === "EXTRA_CLASS_SEAT";
+                    const restaurant = seat.productType === "SEAT_UPSTAIRS_RESTAURANT_WAGON";
+                    const wheelchair = seat.services.some((s) => s.includes("WHEELCHAIR"));
+                    const compartment = seat.services.some((s) => s.includes("COMPARTMENT"));
+                    const petCoach = seat.services.some((s) => s.includes("PET-COACH"));
+                    const pet = seat.services.some((s) => s.includes("PETS"));
+                    const bed = seat.type === "BED";
+                    const special =
+                      extra || restaurant || wheelchair || compartment || petCoach || pet || bed;
+
+                    const proxies = [
                       <SvgProxy
                         key={seat.number + "-bg"}
                         selector={getSeatSelector(seat.type, seat.number)}
@@ -528,25 +536,60 @@ export default function TrainPage({
                           if (heatmapEnabled)
                             return hueShift(
                               "#f9e2af",
-                              ((20 * 8) / statusRange.length) *
+                              20 *
                                 (8 / 2 -
-                                  (statusRange.filter((r) => r === "reserved").length * 8) /
-                                    statusRange.length)
+                                  (statusRange.filter((r) => r === "reserved").length /
+                                    statusRange.length) *
+                                    8)
                             );
                           return "#f9e2af";
                         })()}
-                        stroke={isSelected ? "#313244" : "#1b50af"}
-                        stroke-width={
-                          isSelected
-                            ? heatmapEnabled
-                              ? "5px"
-                              : "3px"
-                            : heatmapEnabled && (allReserved || allOpen)
-                            ? "3px"
-                            : "1px"
-                        }
-                      />
-                    );
+                        stroke={(() => {
+                          if (isSelected) return "#313244";
+                          if (special) return "#820909";
+                          return "#1b50af";
+                        })()}
+                        stroke-width={(() => {
+                          if (heatmapEnabled) {
+                            if (isSelected) return "5px";
+                            if (allReserved || allOpen || special) return "3px";
+                            return "1px";
+                          } else {
+                            if (isSelected) return "3px";
+                            if (special) return "2px";
+                            return "1px";
+                          }
+                        })()}
+                      />,
+                    ];
+
+                    if (pet || petCoach) {
+                      proxies.push(
+                        <SvgProxy
+                          key={seat.number + "-pet-indicator"}
+                          selector={"#pet_seat_indicator_" + seat.number}
+                          fill="rgb(213, 238, 250)"
+                        />
+                      );
+                      if (pet) {
+                        proxies.push(
+                          <SvgProxy
+                            key={seat.number + "-seat-number-1"}
+                            selector={"#seatnumber_" + seat.number}
+                            fill="none"
+                          />
+                        );
+                        proxies.push(
+                          <SvgProxy
+                            key={seat.number + "-seat-number-2"}
+                            selector={"#seatnumber_" + seat.number + "-with-service-icon"}
+                            fill="rgb(27, 80, 175)"
+                          />
+                        );
+                      }
+                    }
+
+                    return proxies;
                   })}
                 </SvgLoader>
               ))}
@@ -674,7 +717,7 @@ export const getServerSideProps = (async (context) => {
 
     const wagons = Object.values(train.timeTableRows[0]!.wagons)
       .filter((w) => w.placeType !== "VEHICLE")
-      .sort((w1, w2) => w2.order - w1.order)
+      .sort((w1, w2) => w1.order - w2.order)
       .map((wagon) => ({
         number: wagon.number,
         floors: Array(wagon.floorCount)
