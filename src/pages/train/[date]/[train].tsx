@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 // @ts-expect-error no types exists
 import { SvgLoader, SvgProxy } from "react-svgmt";
 import { ZodError } from "zod";
+import { hueShift } from "~/lib/colors";
+import { useStickyState } from "~/lib/hooks/useStickyState";
 import { getStations, getTrainOnDate } from "~/lib/vr";
 import { LegendModal } from "../../../components/LegendModal";
 
@@ -60,6 +62,8 @@ export default function TrainPage({
   const [LModalOpen, setLModalOpen] = useState<boolean>(false);
 
   const [selectedSeat, setSelectedSeat] = useState<number[] | null>(initialSelectedSeat ?? null);
+
+  const [heatmapEnabled, setHeatmapEnabled] = useStickyState("heatmapEnabled", false);
 
   useEffect(() => {
     if (!train) return;
@@ -508,19 +512,39 @@ export default function TrainPage({
                       ? seat.number === selectedSeat[1] && wagon.number === selectedSeat[0]
                       : false;
 
+                    const allUnavailable = statusRange.every((r) => r === "unavailable");
+                    const allReserved = statusRange.every((r) => r === "reserved");
+                    const allOpen = statusRange.every((r) => r === "open");
+
                     return (
                       <SvgProxy
                         key={seat.number + "-bg"}
                         selector={getSeatSelector(seat.type, seat.number)}
                         fill={(() => {
-                          if (statusRange.every((r) => r === "unavailable")) return "#9399b2";
-                          if (statusRange.every((r) => r === "reserved")) return "#f38ba8";
-                          if (statusRange.every((r) => r === "open")) return "#a6e3a1";
-                          if (statusRange.includes("unavailable")) return "#fab387";
+                          if (allUnavailable) return "#45475a";
+                          if (statusRange.includes("unavailable")) return "#9399b2";
+                          if (allReserved) return "#f38ba8";
+                          if (allOpen) return "#a6e3a1";
+                          if (heatmapEnabled)
+                            return hueShift(
+                              "#f9e2af",
+                              ((20 * 8) / statusRange.length) *
+                                (8 / 2 -
+                                  (statusRange.filter((r) => r === "reserved").length * 8) /
+                                    statusRange.length)
+                            );
                           return "#f9e2af";
                         })()}
                         stroke={isSelected ? "#313244" : "#1b50af"}
-                        stroke-width={isSelected ? "4px" : "1px"}
+                        stroke-width={
+                          isSelected
+                            ? heatmapEnabled
+                              ? "5px"
+                              : "3px"
+                            : heatmapEnabled && (allReserved || allOpen)
+                            ? "3px"
+                            : "1px"
+                        }
                       />
                     );
                   })}
@@ -593,7 +617,12 @@ export default function TrainPage({
         </p>
       </div>
 
-      <LegendModal IsOpen={LModalOpen} setIsOpen={setLModalOpen} />
+      <LegendModal
+        IsOpen={LModalOpen}
+        setIsOpen={setLModalOpen}
+        heatmapEnabled={heatmapEnabled}
+        setHeatmapEnabled={setHeatmapEnabled}
+      />
     </>
   );
 }
@@ -644,7 +673,7 @@ export const getServerSideProps = (async (context) => {
       }));
 
     const wagons = Object.values(train.timeTableRows[0]!.wagons)
-      .filter(w => w.placeType !== "VEHICLE")
+      .filter((w) => w.placeType !== "VEHICLE")
       .sort((w1, w2) => w2.order - w1.order)
       .map((wagon) => ({
         number: wagon.number,
