@@ -229,7 +229,7 @@ export default function TrainPage({
       const dx = e.clientX - pos.x;
       prevLeft = el.scrollLeft;
       el.scrollLeft = pos.left - dx;
-      velocity = el.scrollLeft - prevLeft;
+      velocity = (1.5 * velocity + (el.scrollLeft - prevLeft)) / 2.5;
     };
 
     const mouseUpHandler = (e: MouseEvent) => {
