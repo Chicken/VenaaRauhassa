@@ -717,9 +717,10 @@ export const getServerSideProps = (async (context) => {
 
     const wagons = Object.values(train.timeTableRows[0]!.wagons)
       .filter((w) => w.placeType !== "VEHICLE")
-      .sort((w1, w2) => w1.order - w2.order)
+      .sort((w1, w2) => w2.number - w1.number)
       .map((wagon) => ({
         number: wagon.number,
+        type: wagon.type,
         floors: Array(wagon.floorCount)
           .fill(0)
           .map((_, floor) => ({
@@ -755,6 +756,7 @@ export const getServerSideProps = (async (context) => {
               })),
           })),
       }));
+    if (["IM2", "EDO"].includes(wagons[0]?.type ?? "")) wagons.reverse();
 
     let initialRange: number[] | null = [0, train.timeTableRows.length];
     let initialSelectedSeat: number[] | null = null;
@@ -815,6 +817,7 @@ export const getServerSideProps = (async (context) => {
         }[];
         wagons: {
           number: number;
+          type: string;
           floors: {
             number: number;
             image: string;
