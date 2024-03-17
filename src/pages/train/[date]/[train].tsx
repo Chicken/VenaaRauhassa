@@ -272,7 +272,7 @@ export default function TrainPage({
           <title>VenaaRauhassa - Virhe</title>
           <meta name="robots" content="noindex,nofollow" />
         </Head>
-        <h1>Virhe tapahtui junaa hakeassa...</h1>
+        <h1>Virhe tapahtui junaa haettaessa...</h1>
         <Button
           onClick={() => void router.push(date ? `/?date=${date}` : "/").catch(console.error)}
         >
