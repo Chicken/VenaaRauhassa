@@ -743,10 +743,13 @@ export const getServerSideProps = (async (context) => {
                   const rowPlace = rowWagon.placeList.find(
                     (place2) => place2.number === place.number
                   );
-                  if (!rowPlace)
-                    throw new Error(
-                      `Place ${place.number} not found wagon ${wagon.number} of ${train.trainNumber} from ${row.dep.stationShortCode} to ${row.arr.stationShortCode} on ${train.departureDate}`
-                    );
+                  if (!rowPlace) {
+                    // VR API IS VERY STUPID
+                    return "reserved";
+                    // throw new Error(
+                    //   `Place ${place.number} not found wagon ${wagon.number} of ${train.trainNumber} from ${row.dep.stationShortCode} to ${row.arr.stationShortCode} on ${train.departureDate}`
+                    // );
+                  }
                   return rowPlace.bookable ? "open" : "reserved";
                 }),
                 type: place.type,
@@ -800,6 +803,7 @@ export const getServerSideProps = (async (context) => {
     if (e instanceof ZodError) {
       console.error(e.issues, e.issues[0]);
     }
+    context.res.statusCode = 500;
     return { props: { error: true, date: context.query.date } };
   }
 }) satisfies GetServerSideProps<
