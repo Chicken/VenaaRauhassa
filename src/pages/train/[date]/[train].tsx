@@ -9,10 +9,10 @@ import { useEffect, useState } from "react";
 import { SvgLoader, SvgProxy } from "react-svgmt";
 import { ZodError } from "zod";
 import { hueShift } from "~/lib/colors";
+import { getBaseURL } from "~/lib/deployment";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import { getStations, getTrainOnDate } from "~/lib/vr";
 import { LegendModal } from "../../../components/LegendModal";
-import { getBaseURL } from "~/lib/deployment";
 
 function getSeatId(event: MouseEvent) {
   if (!(event.target instanceof Element)) {
@@ -64,7 +64,7 @@ export default function TrainPage({
 
   const [selectedSeat, setSelectedSeat] = useState<number[] | null>(initialSelectedSeat ?? null);
 
-  const [heatmapEnabled, setHeatmapEnabled] = useStickyState("heatmapEnabled", false);
+  const [heatmapEnabled, setHeatmapEnabled] = useStickyState("heatmapEnabled", true);
 
   useEffect(() => {
     if (!train) return;
