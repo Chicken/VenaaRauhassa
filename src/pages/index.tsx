@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { getInitialTrains } from "~/lib/vr";
+import { getBaseURL } from "~/lib/deployment";
 
 const pickerStyle: React.CSSProperties = {
   width: "100%",
@@ -93,8 +94,8 @@ export default function Home({
           name="keywords"
           content="venaarauhassa, venaarauhas, venaa, rauhassa, rauhas, vr, juna, paikka, kartta, asema"
         />
-        <meta property="og:url" content="https://venaarauhassa.fi/" />
-        <link rel="canonical" href="https://venaarauhassa.fi/" />
+        <meta property="og:url" content={getBaseURL() + "/"} />
+        <link rel="canonical" href={getBaseURL() + "/"} />
       </Head>
       <Flex
         style={{ width: "100%", gap: "5px" }}

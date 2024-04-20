@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import type { GetServerSidePropsContext } from "next";
+import { getBaseURL } from "~/lib/deployment";
 
 function generateSiteMapIndex(paths: string[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -7,7 +8,7 @@ function generateSiteMapIndex(paths: string[]): string {
     .map(
       (path) => `
   <sitemap>
-    <loc>https://venaarauhassa.fi${path}</loc>
+    <loc>${getBaseURL()}${path}</loc>
   </sitemap>`
     )
     .join("")}

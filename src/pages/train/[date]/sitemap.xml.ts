@@ -1,5 +1,6 @@
 import type { GetServerSidePropsContext } from "next";
 import { getJSON } from "~/lib/http";
+import { getBaseURL } from "~/lib/deployment";
 
 function generateSiteMap(paths: string[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -7,7 +8,7 @@ function generateSiteMap(paths: string[]): string {
     .map(
       (path) => `
   <url>
-    <loc>https://venaarauhassa.fi${path}</loc>
+    <loc>${getBaseURL()}${path}</loc>
     <changefreq>hourly</changefreq>
   </url>`
     )

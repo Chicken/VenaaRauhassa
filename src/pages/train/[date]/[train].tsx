@@ -12,6 +12,7 @@ import { hueShift } from "~/lib/colors";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import { getStations, getTrainOnDate } from "~/lib/vr";
 import { LegendModal } from "../../../components/LegendModal";
+import { getBaseURL } from "~/lib/deployment";
 
 function getSeatId(event: MouseEvent) {
   if (!(event.target instanceof Element)) {
@@ -334,7 +335,7 @@ export default function TrainPage({
           percentageBookedEcoSeats * 100
         ).toFixed(0)}% ajasta.`
       : "";
-  const url = `https://venaarauhassa.fi/train/${train.departureDate}/${train.trainNumber}`;
+  const url = `${getBaseURL()}/train/${train.departureDate}/${train.trainNumber}`;
   const tags = [
     "venaarauhassa",
     "venaarauhas",
