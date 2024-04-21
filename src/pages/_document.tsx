@@ -4,7 +4,17 @@ import Document, { Head, Html, Main, NextScript } from "next/document";
 
 const AppDocument = () => (
   <Html lang="en">
-    <Head />
+    <Head>
+      {process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT && process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? (
+        <script
+          defer
+          data-domain={process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
+          src={process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT}
+        ></script>
+      ) : (
+        <></>
+      )}
+    </Head>
     <body>
       <Main />
       <NextScript />
