@@ -698,17 +698,17 @@ export default function TrainPage({
             criteria = best[0]!.group.length;
             best = best.filter((s) => s.group.length === criteria);
 
-            console.log("group length", criteria, best);
+            if (process.env.NODE_ENV === "development") console.log("group length", criteria, best);
 
             criteria = best[0]!.groupScore;
             best = best.filter((s) => s.groupScore >= criteria - 0.0001);
 
-            console.log("group score", criteria, best);
+            if (process.env.NODE_ENV === "development") console.log("group score", criteria, best);
 
             criteria = posToNum(best[0]!.position);
             best = best.filter((s) => posToNum(s.position) === criteria);
 
-            console.log("position", criteria, best);
+            if (process.env.NODE_ENV === "development") console.log("position", criteria, best);
 
             if (selectedSeat)
               best = best.filter(
@@ -729,7 +729,7 @@ export default function TrainPage({
             }
 
             const randomSeat = best[Math.floor(Math.random() * best.length)]!;
-            console.log(randomSeat);
+            if (process.env.NODE_ENV === "development") console.log(randomSeat);
 
             setSelectedSeat([randomSeat.wagon, randomSeat.number]);
 
