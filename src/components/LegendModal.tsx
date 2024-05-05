@@ -82,7 +82,18 @@ export const LegendModal = ({
         />
         <p>
           Vaihda keltaisesta väliväristä edistyneempään lämpökarttaan:&nbsp;
-          <Switch checked={heatmapEnabled} onChange={() => setHeatmapEnabled((s) => !s)} />
+          <Switch
+            checked={heatmapEnabled}
+            onChange={() => {
+              // @ts-expect-error no types for globally available plausible function
+              if (window.plausible) {
+                // @ts-expect-error no types for globally available plausible function
+                // eslint-disable-next-line
+                window.plausible("Change Map Type", { props: { heatmapEnabled: !heatmapEnabled } });
+              }
+              setHeatmapEnabled((s) => !s);
+            }}
+          />
         </p>
       </Modal>
     </>

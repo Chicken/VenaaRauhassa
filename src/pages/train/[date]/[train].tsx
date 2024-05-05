@@ -389,7 +389,14 @@ export default function TrainPage({
           <span style={{ marginLeft: "5px" }}>{train.trainType + train.trainNumber}</span>
         </h1>
         <div style={{ marginLeft: "auto" }}>
-          <Button onClick={() => setLModalOpen(true)}>
+          <Button
+            onClick={() => {
+              // @ts-expect-error no types for globally available plausible function
+              // eslint-disable-next-line
+              if (window.plausible) window.plausible("Press Help");
+              setLModalOpen(true);
+            }}
+          >
             <QuestionCircleOutlined />
           </Button>
         </div>
@@ -409,6 +416,9 @@ export default function TrainPage({
           max={stations.length - 1}
           value={timeRange}
           onChange={(value) => {
+            // @ts-expect-error no types for globally available plausible function
+            // eslint-disable-next-line
+            if (window.plausible) window.plausible("Change Range");
             if (value[0] === value[1]) {
               if (value[0] === 0 || value[0] === stations.length - 1) return;
               setTimeRange(
