@@ -2,12 +2,12 @@ import { Button, DatePicker, Flex, Select } from "antd";
 import dayjs from "dayjs";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
+import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { getInitialTrains } from "~/lib/vr";
-import { getBaseURL } from "~/lib/deployment";
 
 const pickerStyle: React.CSSProperties = {
   width: "100%",
@@ -126,8 +126,21 @@ export default function Home({
         </p>
         <br />
 
+        {isInMaintenance() && (
+          <h2
+            style={{
+              textAlign: "center",
+            }}
+          >
+            Palvelu on huoltokatkolla VR:n tekemien rajapintamuutoksien takia.
+            <br />
+            Asiaa selvitellään
+          </h2>
+        )}
+
         <DatePicker
           placeholder="Valitse päivä"
+          disabled={isInMaintenance()}
           defaultValue={dayjs(initialDate)}
           style={pickerStyle}
           onChange={(_date, dateString) => {
@@ -144,7 +157,7 @@ export default function Home({
         <br />
         <Select
           style={pickerStyle}
-          disabled={selectedDate && trainsLoaded ? false : true}
+          disabled={isInMaintenance() || (selectedDate && trainsLoaded ? false : true)}
           loading={selectedDate && !trainsLoaded ? true : false}
           showSearch
           allowClear
@@ -179,7 +192,7 @@ export default function Home({
         <br />
 
         <Button
-          disabled={selectedDate && selectedTrain ? false : true}
+          disabled={isInMaintenance() || (selectedDate && selectedTrain ? false : true)}
           loading={trainLoading}
           onClick={() => {
             setTrainLoading(true);

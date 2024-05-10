@@ -1,6 +1,6 @@
 import type { GetServerSidePropsContext } from "next";
+import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { getJSON } from "~/lib/http";
-import { getBaseURL } from "~/lib/deployment";
 
 function generateSiteMap(paths: string[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -22,6 +22,16 @@ export default function SiteMap() {
 }
 
 export async function getServerSideProps({ res, query }: GetServerSidePropsContext) {
+  if (isInMaintenance()) {
+    res.statusCode = 503;
+    res.setHeader("Retry-After", "86400");
+    res.end();
+
+    return {
+      props: {},
+    };
+  }
+
   res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
 
   const date = query.date as string;

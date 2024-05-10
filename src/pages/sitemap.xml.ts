@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import type { GetServerSidePropsContext } from "next";
-import { getBaseURL } from "~/lib/deployment";
+import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 
 function generateSiteMapIndex(paths: string[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -21,6 +21,16 @@ export default function SiteMapIndex() {
 }
 
 export function getServerSideProps({ res }: GetServerSidePropsContext) {
+  if (isInMaintenance()) {
+    res.statusCode = 503;
+    res.setHeader("Retry-After", "86400");
+    res.end();
+
+    return {
+      props: {},
+    };
+  }
+
   res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
 
   const nextTwoWeeks = Array(15)

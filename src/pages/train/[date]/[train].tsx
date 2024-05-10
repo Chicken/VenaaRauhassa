@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { SvgLoader, SvgProxy } from "react-svgmt";
 import { ZodError } from "zod";
 import { hueShift } from "~/lib/colors";
-import { getBaseURL } from "~/lib/deployment";
+import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import { getStations, getTrainOnDate } from "~/lib/vr";
 import { LegendModal } from "../../../components/LegendModal";
@@ -275,7 +275,11 @@ export default function TrainPage({
           <title>VenaaRauhassa - Virhe</title>
           <meta name="robots" content="noindex,nofollow" />
         </Head>
-        <h1>Virhe tapahtui junaa haettaessa...</h1>
+        {isInMaintenance() ? (
+          <h1>Palvelu huoltokatkolla...</h1>
+        ) : (
+          <h1>Virhe tapahtui junaa haettaessa...</h1>
+        )}
         <Button
           onClick={() => void router.push(date ? `/?date=${date}` : "/").catch(console.error)}
         >
@@ -841,6 +845,14 @@ export default function TrainPage({
 }
 
 export const getServerSideProps = (async (context) => {
+  if (isInMaintenance()) {
+    return {
+      props: {
+        error: true,
+      },
+    };
+  }
+
   context.res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
 
   if (typeof context.query.date !== "string" || typeof context.query.train !== "string") {
