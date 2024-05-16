@@ -1,15 +1,16 @@
 import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
 import type { DocumentContext } from "next/document";
 import Document, { Head, Html, Main, NextScript } from "next/document";
+import { env } from "~/lib/env";
 
 const AppDocument = () => (
   <Html lang="en">
     <Head>
-      {process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT && process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? (
+      {env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT && env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? (
         <script
           defer
-          data-domain={process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
-          src={process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT}
+          data-domain={env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
+          src={env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT}
         ></script>
       ) : (
         <></>

@@ -1,4 +1,4 @@
-import { LeftCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { LeftCircleOutlined, QuestionCircleOutlined, ReloadOutlined } from "@ant-design/icons";
 import { Button, Slider, message } from "antd";
 import dayjs from "dayjs";
 import { type GetServerSideProps, type InferGetServerSidePropsType } from "next";
@@ -278,13 +278,20 @@ export default function TrainPage({
         {isInMaintenance() ? (
           <h1>Palvelu huoltokatkolla...</h1>
         ) : (
-          <h1>Virhe tapahtui junaa haettaessa...</h1>
+          <h1>Virhe tapahtui junaa haettaessa, yritä uudelleen</h1>
         )}
         <Button
           onClick={() => void router.push(date ? `/?date=${date}` : "/").catch(console.error)}
         >
           <LeftCircleOutlined /> Takaisin
         </Button>
+        {
+          !isInMaintenance() && (
+            <Button onClick={() => window.location.reload()}>
+              <ReloadOutlined /> Yritä uudelleen
+            </Button>
+          )
+        }
       </div>
     );
   }

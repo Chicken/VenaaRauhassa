@@ -1,87 +1,202 @@
+import { Redis } from "@upstash/redis";
+import { StatusError } from "bent";
+import crypto from "crypto";
 import { z } from "zod";
+import { env } from "~/lib/env";
 import { getJSON, postJSON } from "~/lib/http";
 import { formatShortFinnishTime } from "./dateUtilities";
 
-function gql(strings: TemplateStringsArray, ...values: unknown[]) {
-  return strings.reduce((v, i) => `${v}${String(values[parseInt(i)]) || ""}`);
+const loginResponseSchema = z.object({
+  identityToken: z.string(),
+  expiresOn: z.string(),
+  refreshToken: z.string(),
+  refreshTokenExpiresOn: z.string(),
+});
+
+async function vrLogin(username: string, password: string) {
+  const sessionId = crypto.randomUUID();
+  const session = (await postJSON(
+    `${env.VR_API_URL}/auth/login`,
+    {
+      username,
+      password,
+    },
+    {
+      "x-vr-requestid": crypto.randomUUID(),
+      "x-vr-sessionid": sessionId,
+      "aste-apikey": env.VR_API_KEY,
+    }
+  )) as unknown;
+
+  return {
+    ...loginResponseSchema.parse(session),
+    sessionId: sessionId,
+  };
+}
+
+const resfreshResponseSchema = z.object({
+  accessToken: z.string(),
+  expiresOn: z.string(),
+  refreshToken: z.string(),
+  refreshTokenExpiresOn: z.string(),
+});
+
+async function vrRefreshToken(token: string, refreshToken: string, sessionId: string) {
+  const session = (await postJSON(
+    `${env.VR_API_URL}/auth/token`,
+    {
+      refreshToken,
+    },
+    {
+      "x-vr-requestid": crypto.randomUUID(),
+      "x-vr-sessionid": sessionId,
+      "aste-apikey": env.VR_API_KEY,
+      "x-jwt-token": token,
+    }
+  )) as unknown;
+
+  return resfreshResponseSchema.parse(session);
+}
+
+const storedSessionSchema = z.object({
+  sessionId: z.string(),
+  token: z.string(),
+  refreshToken: z.string(),
+  expiresOn: z.string(),
+});
+
+type StoredSession = z.infer<typeof storedSessionSchema>;
+
+async function getVrAuth(retry = false): Promise<{ sessionId: string; token: string }> {
+  const redis = new Redis({
+    url: env.UPSTASH_URL,
+    token: env.UPSTASH_TOKEN,
+  });
+
+  const rawSession = await redis.hgetall("session");
+  const parsedSession = storedSessionSchema.safeParse(rawSession);
+  if (
+    !rawSession ||
+    !parsedSession.success ||
+    (retry &&
+      parsedSession.success &&
+      new Date(parsedSession.data.expiresOn).getTime() < Date.now())
+  ) {
+    const newSession = await vrLogin(env.VR_USER, env.VR_PASS);
+    await redis.hset("session", {
+      sessionId: newSession.sessionId,
+      token: newSession.identityToken,
+      refreshToken: newSession.refreshToken,
+      expiresOn: newSession.expiresOn,
+    } satisfies StoredSession);
+    return {
+      sessionId: newSession.sessionId,
+      token: newSession.identityToken,
+    };
+  }
+  const session = parsedSession.data;
+  if (new Date(session.expiresOn).getTime() < Date.now()) {
+    try {
+      const newSession = await vrRefreshToken(
+        session.token,
+        session.refreshToken,
+        session.sessionId
+      );
+      await redis.hset("session", {
+        sessionId: session.sessionId,
+        token: newSession.accessToken,
+        refreshToken: newSession.refreshToken,
+        expiresOn: newSession.expiresOn,
+      } satisfies StoredSession);
+      return {
+        sessionId: session.sessionId,
+        token: newSession.accessToken,
+      };
+    } catch (e) {
+      console.error("refreshing session failed", e);
+      // just sleep a bit and try again
+      await new Promise((res) => setTimeout(res, 50));
+      return getVrAuth(true);
+    }
+  }
+
+  return {
+    sessionId: session.sessionId,
+    token: session.token,
+  };
 }
 
 const wagonResponseSchema = z.object({
-  data: z.object({
-    wagonMapDataV2: z.object({
-      coaches: z.record(
-        z.string(),
+  coaches: z.record(
+    z.string(),
+    z.object({
+      number: z.number(),
+      placeType: z.string().nullable(),
+      type: z.string(),
+      floorCount: z.number(),
+      order: z.number(),
+      placeList: z.array(
         z.object({
+          floor: z.number(),
+          logicalSection: z.number(),
           number: z.number(),
-          placeType: z.string().nullable(),
+          bookable: z.boolean(),
           type: z.string(),
-          floorCount: z.number(),
-          order: z.number(),
-          placeList: z.array(
-            z.object({
-              floor: z.number(),
-              logicalSection: z.number(),
-              number: z.number(),
-              bookable: z.boolean(),
-              type: z.string(),
-              productType: z.string(),
-              services: z.array(z.string()),
-              position: z
-                .string()
-                .optional()
-                .transform((v) => v ?? null),
-            })
-          ),
+          productType: z.string(),
+          services: z.array(z.string()),
+          position: z
+            .string()
+            .optional()
+            .transform((v) => v ?? null),
         })
       ),
-    }),
-  }),
+    })
+  ),
 });
 
 async function getWagonMapData(
   departureStation: string,
   arrivalStation: string,
   departureTime: Date,
-  trainType: string,
-  trainNumber: string | number
+  trainNumber: string | number,
+  sessionId: string,
+  token: string
 ) {
-  const query = gql`
-    query getWagonMapDataV2(
-      $departureStation: String!
-      $arrivalStation: String!
-      $departureTime: String!
-      $trainNumber: String!
-      $trainType: String!
-    ) {
-      wagonMapDataV2(
-        departureStation: $departureStation
-        arrivalStation: $arrivalStation
-        departureTime: $departureTime
-        trainNumber: $trainNumber
-        trainType: $trainType
-      ) {
-        coaches
+  try {
+    const res = (await getJSON(
+      `${
+        env.VR_API_URL
+      }/trains/${trainNumber}/wagonmap/v3?departureStation=${departureStation}&arrivalStation=${arrivalStation}&departureTime=${departureTime.toISOString()}`,
+      undefined,
+      {
+        "x-vr-requestid": crypto.randomUUID(),
+        "x-vr-sessionid": sessionId,
+        "aste-apikey": env.VR_API_KEY,
+        "x-jwt-token": token,
       }
+    )) as unknown;
+
+    const parsed = wagonResponseSchema.parse(res);
+
+    return parsed.coaches;
+  } catch (e) {
+    if (e instanceof StatusError && e.statusCode === 401) {
+      try {
+        const redis = new Redis({
+          url: env.UPSTASH_URL,
+          token: env.UPSTASH_TOKEN,
+        });
+        const newSession = await vrLogin(env.VR_USER, env.VR_PASS);
+        await redis.hset("session", {
+          sessionId: newSession.sessionId,
+          token: newSession.identityToken,
+          refreshToken: newSession.refreshToken,
+          expiresOn: newSession.expiresOn,
+        } satisfies StoredSession);
+      } catch (_ignored) {}
     }
-  `;
-
-  const variables = {
-    arrivalStation,
-    departureStation,
-    departureTime: departureTime.toISOString(),
-    trainNumber: trainNumber.toString(),
-    trainType,
-  };
-
-  const res = (await postJSON("https://www.vr.fi/api/v6", {
-    operationName: "getWagonMapDataV2",
-    query,
-    variables,
-  })) as unknown;
-
-  const parsed = wagonResponseSchema.parse(res);
-
-  return parsed.data.wagonMapDataV2.coaches;
+    throw e;
+  }
 }
 
 const trainResponseSchema = z.array(
@@ -109,6 +224,8 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
   const train = data[0];
   if (!train) return null;
 
+  const auth = await getVrAuth();
+
   train.timeTableRows = train.timeTableRows.filter((r) => r.trainStopping && r.commercialStop);
 
   const newTrain = {
@@ -124,8 +241,9 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
             dep.stationShortCode,
             arr.stationShortCode,
             new Date(dep.scheduledTime),
-            train.trainType,
-            trainNumber
+            trainNumber,
+            auth.sessionId,
+            auth.token
           );
           return {
             dep,
