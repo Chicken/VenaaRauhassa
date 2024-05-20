@@ -4,7 +4,6 @@ import "dayjs/locale/fi";
 import { GeistSans } from "geist/font/sans";
 import { type AppType } from "next/app";
 import Head from "next/head";
-import { Analytics } from "@vercel/analytics/react";
 
 import "~/styles/global.css";
 
@@ -28,7 +27,6 @@ const App: AppType = ({ Component, pageProps }) => {
       </Head>
 
       <Layout className="layout" style={{ height: "100vh" }}>
-        <Analytics />
         <Content className="layoutPadding">
           <div className={`site-layout-content ${GeistSans.className}`}>
             <Component {...pageProps} />
