@@ -13,6 +13,7 @@ import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import { getStations, getTrainOnDate } from "~/lib/vr";
 import { LegendModal } from "../../../components/LegendModal";
+import { error } from "~/lib/logger";
 
 function getSeatId(event: MouseEvent) {
   if (!(event.target instanceof Element)) {
@@ -863,12 +864,12 @@ export const getServerSideProps = (async (context) => {
 
   context.res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
 
-  if (typeof context.query.date !== "string" || typeof context.query.train !== "string") {
+  if (!context.params || typeof context.params.date !== "string" || typeof context.params.train !== "string") {
     return { props: { state: "error" } };
   }
 
-  const date = new Date(context.query.date);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(context.query.date) || Number.isNaN(date.getTime())) {
+  const date = new Date(context.params.date);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(context.params.date) || Number.isNaN(date.getTime())) {
     return { props: { state: "error" } };
   }
 
@@ -882,7 +883,7 @@ export const getServerSideProps = (async (context) => {
 
   try {
     const [train, allStations] = await Promise.all([
-      getTrainOnDate(context.query.date, context.query.train),
+      getTrainOnDate(context.params.date, context.params.train),
       getStations(),
     ]);
 
@@ -890,7 +891,7 @@ export const getServerSideProps = (async (context) => {
       return {
         props: {
           state: "train-not-found",
-          date: context.query.date,
+          date: context.params.date,
         },
       };
     }
@@ -987,7 +988,7 @@ export const getServerSideProps = (async (context) => {
     return {
       props: {
         state: "success",
-        date: context.query.date,
+        date: context.params.date,
         initialRange,
         initialSelectedSeat,
         train,
@@ -1000,8 +1001,13 @@ export const getServerSideProps = (async (context) => {
     if (e instanceof ZodError) {
       console.error(e.issues, e.issues[0]);
     }
+    await error({
+      date: context.params.date,
+      train: context.params.train,
+      url: "<" + getBaseURL() + context.resolvedUrl + ">",
+    }, e);
     context.res.statusCode = 500;
-    return { props: { state: "error", date: context.query.date } };
+    return { props: { state: "error", date: context.params.date } };
   }
 }) satisfies GetServerSideProps<
   (

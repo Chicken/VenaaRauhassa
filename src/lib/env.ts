@@ -9,6 +9,8 @@ export const env = createEnv({
     VR_API_URL: z.string(),
     UPSTASH_URL: z.string(),
     UPSTASH_TOKEN: z.string(),
+    ERROR_DISCORD_WEBHOOK: z.string().optional(),
+    ERROR_HASTEBIN_URL: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_MAINTENANCE: z.string().optional(),
@@ -24,6 +26,8 @@ export const env = createEnv({
     VR_API_URL: process.env.VR_API_URL,
     UPSTASH_URL: process.env.UPSTASH_URL,
     UPSTASH_TOKEN: process.env.UPSTASH_TOKEN,
+    ERROR_DISCORD_WEBHOOK: process.env.ERROR_DISCORD_WEBHOOK,
+    ERROR_HASTEBIN_URL: process.env.ERROR_HASTEBIN_URL,
     NEXT_PUBLIC_MAINTENANCE: process.env.NEXT_PUBLIC_MAINTENANCE,
     NEXT_PUBLIC_PLAUSIBLE_SCRIPT: process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT,
     NEXT_PUBLIC_PLAUSIBLE_DOMAIN: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN,

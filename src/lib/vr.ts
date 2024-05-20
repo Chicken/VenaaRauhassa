@@ -25,7 +25,7 @@ async function vrLogin(username: string, password: string) {
       "x-vr-sessionid": sessionId,
       "aste-apikey": env.VR_API_KEY,
     }
-  )) as unknown;
+  )) ;
 
   return {
     ...loginResponseSchema.parse(session),
@@ -52,7 +52,7 @@ async function vrRefreshToken(token: string, refreshToken: string, sessionId: st
       "aste-apikey": env.VR_API_KEY,
       "x-jwt-token": token,
     }
-  )) as unknown;
+  ));
 
   return resfreshResponseSchema.parse(session);
 }
@@ -166,14 +166,13 @@ async function getWagonMapData(
       `${
         env.VR_API_URL
       }/trains/${trainNumber}/wagonmap/v3?departureStation=${departureStation}&arrivalStation=${arrivalStation}&departureTime=${departureTime.toISOString()}`,
-      undefined,
       {
         "x-vr-requestid": crypto.randomUUID(),
         "x-vr-sessionid": sessionId,
         "aste-apikey": env.VR_API_KEY,
         "x-jwt-token": token,
       }
-    )) as unknown;
+    ));
 
     const parsed = wagonResponseSchema.parse(res);
 
@@ -218,7 +217,7 @@ const trainResponseSchema = z.array(
 export async function getTrainOnDate(date: string, trainNumber: string) {
   const res = (await getJSON(
     `https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`
-  )) as unknown;
+  ));
 
   const data = trainResponseSchema.parse(res);
   const train = data[0];
@@ -266,7 +265,7 @@ const stationResponseSchema = z.array(
 );
 
 export async function getStations() {
-  const res = (await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations")) as unknown;
+  const res = (await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations"));
 
   const data = stationResponseSchema.parse(res);
 
@@ -292,7 +291,7 @@ const trainsResponseSchema = z.array(
 
 export async function getInitialTrains(date: string) {
   const [initialTrainsUnchecked, stations] = await Promise.all([
-    getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`) as Promise<unknown>,
+    getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`),
     getStations(),
   ]);
 
