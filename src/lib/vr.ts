@@ -1,5 +1,4 @@
 import { Redis } from "@upstash/redis";
-import { StatusError } from "bent";
 import crypto from "crypto";
 import { z } from "zod";
 import { env } from "~/lib/env";
@@ -180,7 +179,8 @@ async function getWagonMapData(
 
     return parsed.coaches;
   } catch (e) {
-    if (e instanceof StatusError && e.statusCode === 401) {
+    // @ts-expect-error bent typings are wrong and we can't check for instanceof StatusError
+    if (e instanceof Error && e.name === "StatusError" && e.statusCode === 401) {
       try {
         const redis = new Redis({
           url: env.UPSTASH_URL,
