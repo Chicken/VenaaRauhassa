@@ -141,6 +141,7 @@ export default function Home({
         <DatePicker
           placeholder="Valitse päivä"
           disabled={isInMaintenance()}
+          disabledDate={(current) => current && current < dayjs().subtract(2, "day")}
           defaultValue={dayjs(initialDate)}
           style={pickerStyle}
           onChange={(_date, dateString) => {

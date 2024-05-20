@@ -47,7 +47,7 @@ function getSeatSelector(type: string, number: number): string {
 }
 
 export default function TrainPage({
-  error,
+  state,
   date,
   initialRange,
   initialSelectedSeat,
@@ -55,8 +55,7 @@ export default function TrainPage({
   stations,
   wagons,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  if (process.env.NODE_ENV === "development")
-    console.debug(error, date, initialRange, initialSelectedSeat, train, stations, wagons);
+  if (process.env.NODE_ENV === "development") console.debug(state, train, stations, wagons);
 
   const router = useRouter();
   const [messageApi, messageContextHolder] = message.useMessage();
@@ -268,7 +267,7 @@ export default function TrainPage({
     };
   }, []);
 
-  if (error) {
+  if (state === "error") {
     return (
       <div style={{ textAlign: "center" }}>
         <Head>
@@ -285,25 +284,27 @@ export default function TrainPage({
         >
           <LeftCircleOutlined /> Takaisin
         </Button>
-        {
-          !isInMaintenance() && (
-            <Button onClick={() => window.location.reload()}>
-              <ReloadOutlined /> Yritä uudelleen
-            </Button>
-          )
-        }
+        {!isInMaintenance() && (
+          <Button onClick={() => window.location.reload()}>
+            <ReloadOutlined /> Yritä uudelleen
+          </Button>
+        )}
       </div>
     );
   }
 
-  if (!train) {
+  if (state !== "success") {
     return (
       <div style={{ textAlign: "center" }}>
         <Head>
           <title>VenaaRauhassa - 404</title>
           <meta name="robots" content="noindex,nofollow" />
         </Head>
-        <h1>Junaa ei löytynyt...</h1>
+        {state === "train-not-found" ? (
+          <h1>Junaa ei löytynyt...</h1>
+        ) : (
+          <h1>Juna on lähtenyt jo aikoja sitten...</h1>
+        )}
         <Button
           onClick={() => void router.push(date ? `/?date=${date}` : "/").catch(console.error)}
         >
@@ -855,7 +856,7 @@ export const getServerSideProps = (async (context) => {
   if (isInMaintenance()) {
     return {
       props: {
-        error: true,
+        state: "error",
       },
     };
   }
@@ -863,12 +864,20 @@ export const getServerSideProps = (async (context) => {
   context.res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
 
   if (typeof context.query.date !== "string" || typeof context.query.train !== "string") {
-    return { props: { error: true } };
+    return { props: { state: "error" } };
   }
 
   const date = new Date(context.query.date);
-  if (isNaN(date.getTime())) {
-    return { props: { error: true } };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(context.query.date) || Number.isNaN(date.getTime())) {
+    return { props: { state: "error" } };
+  }
+
+  if (date.getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000) {
+    return {
+      props: {
+        state: "train-too-old",
+      },
+    };
   }
 
   try {
@@ -880,9 +889,8 @@ export const getServerSideProps = (async (context) => {
     if (!train) {
       return {
         props: {
-          error: false,
+          state: "train-not-found",
           date: context.query.date,
-          train: null,
         },
       };
     }
@@ -978,7 +986,7 @@ export const getServerSideProps = (async (context) => {
 
     return {
       props: {
-        error: false,
+        state: "success",
         date: context.query.date,
         initialRange,
         initialSelectedSeat,
@@ -993,12 +1001,12 @@ export const getServerSideProps = (async (context) => {
       console.error(e.issues, e.issues[0]);
     }
     context.res.statusCode = 500;
-    return { props: { error: true, date: context.query.date } };
+    return { props: { state: "error", date: context.query.date } };
   }
 }) satisfies GetServerSideProps<
   (
     | {
-        error: false;
+        state: "success";
         initialRange: number[];
         initialSelectedSeat: number[] | null;
         train: NonNullable<Awaited<ReturnType<typeof getTrainOnDate>>>;
@@ -1015,11 +1023,13 @@ export const getServerSideProps = (async (context) => {
         }[];
       }
     | {
-        error: false;
-        train: null;
+        state: "train-not-found";
       }
     | {
-        error: true;
+        state: "train-too-old";
+      }
+    | {
+        state: "error";
       }
   ) & { date?: string }
 >;
