@@ -14,7 +14,7 @@ const loginResponseSchema = z.object({
 
 async function vrLogin(username: string, password: string) {
   const sessionId = crypto.randomUUID();
-  const session = (await postJSON(
+  const session = await postJSON(
     `${env.VR_API_URL}/auth/login`,
     {
       username,
@@ -25,7 +25,7 @@ async function vrLogin(username: string, password: string) {
       "x-vr-sessionid": sessionId,
       "aste-apikey": env.VR_API_KEY,
     }
-  )) ;
+  );
 
   return {
     ...loginResponseSchema.parse(session),
@@ -41,7 +41,7 @@ const resfreshResponseSchema = z.object({
 });
 
 async function vrRefreshToken(token: string, refreshToken: string, sessionId: string) {
-  const session = (await postJSON(
+  const session = await postJSON(
     `${env.VR_API_URL}/auth/token`,
     {
       refreshToken,
@@ -52,7 +52,7 @@ async function vrRefreshToken(token: string, refreshToken: string, sessionId: st
       "aste-apikey": env.VR_API_KEY,
       "x-jwt-token": token,
     }
-  ));
+  );
 
   return resfreshResponseSchema.parse(session);
 }
@@ -162,7 +162,7 @@ async function getWagonMapData(
   token: string
 ) {
   try {
-    const res = (await getJSON(
+    const res = await getJSON(
       `${
         env.VR_API_URL
       }/trains/${trainNumber}/wagonmap/v3?departureStation=${departureStation}&arrivalStation=${arrivalStation}&departureTime=${departureTime.toISOString()}`,
@@ -172,14 +172,18 @@ async function getWagonMapData(
         "aste-apikey": env.VR_API_KEY,
         "x-jwt-token": token,
       }
-    ));
+    );
 
     const parsed = wagonResponseSchema.parse(res);
 
     return parsed.coaches;
   } catch (e) {
-    // @ts-expect-error bent typings are wrong and we can't check for instanceof StatusError
-    if (e instanceof Error && e.name === "StatusError" && e.statusCode === 401) {
+    if (
+      e instanceof Error &&
+      e.name === "StatusError" &&
+      // @ts-expect-error bent typings are wrong and we can't check for instanceof StatusError
+      (e.statusCode === 401 || e.statusCode === 403)
+    ) {
       try {
         const redis = new Redis({
           url: env.UPSTASH_URL,
@@ -215,9 +219,7 @@ const trainResponseSchema = z.array(
 );
 
 export async function getTrainOnDate(date: string, trainNumber: string) {
-  const res = (await getJSON(
-    `https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`
-  ));
+  const res = await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`);
 
   const data = trainResponseSchema.parse(res);
   const train = data[0];
@@ -265,7 +267,7 @@ const stationResponseSchema = z.array(
 );
 
 export async function getStations() {
-  const res = (await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations"));
+  const res = await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations");
 
   const data = stationResponseSchema.parse(res);
 
