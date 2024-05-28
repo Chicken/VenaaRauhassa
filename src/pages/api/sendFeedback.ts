@@ -1,28 +1,38 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { env } from "~/lib/env";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { feedback, email } = JSON.parse(req.body);
-  if (!env.FEEDBACK_DISCORD_WEBHOOK) return;
-  
-  try {
-    const messageString = email
-      ? "```Sähköposti: " + email + "\nPalaute: " + feedback + "```"
-      : "```Palaute: " + feedback + "```";
+interface FeedbackBody {
+  feedback: string;
+  email?: string;
+}
+interface ExtendedNextApiRequest extends NextApiRequest {
+    body: string
+  }
 
-    await fetch(env.FEEDBACK_DISCORD_WEBHOOK, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content: messageString,
-      }),
-    });
-  } catch (err: any) {
-    console.log(err.message);
-    res.status(500).send({ error: "Failed to send feedback" });
+export default async function handler(req: ExtendedNextApiRequest, res: NextApiResponse) {
+  if (!env.FEEDBACK_DISCORD_WEBHOOK) {
+    res.status(500).json({ error: "Webhook URL not configured" });
     return;
+  }
+
+  const { feedback, email }:FeedbackBody = JSON.parse(req.body) as FeedbackBody;
+
+  const messageString = email
+    ? "```Sähköposti: " + email + "\nPalaute: " + feedback + "```"
+    : "```Palaute: " + feedback + "```";
+
+  const response = await fetch(env.FEEDBACK_DISCORD_WEBHOOK, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content: messageString,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to send feedback");
   }
 
   res.status(200).json({ message: "Feedback sent successfully" });

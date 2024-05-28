@@ -134,24 +134,26 @@ export default function Home({
       >
 
 
-    <Form form={fbForm} layout="vertical" style={{marginTop:"2em"}} onFinish={async (values) => {
-      console.log(values)
-      setIsFbModalOpen(false)
-      fbForm.resetFields()
-      messageApi
-      .open({
-        type: "success",
-        content: "Kiitos palautteesta!",
-      })
-      .then(
-        () => null,
-        () => null
-      );
+    <Form form={fbForm} layout="vertical" style={{marginTop:"2em"}} onFinish={(values) => {
+      void (async () => {
+        console.log(values)
+        setIsFbModalOpen(false)
+        fbForm.resetFields()
+        messageApi
+        .open({
+          type: "success",
+          content: "Kiitos palautteesta!",
+        })
+        .then(
+          () => null,
+          () => null
+        );
 
-      await fetch("/api/sendFeedback", {
-        method: "POST",
-        body: JSON.stringify(values)
-      })
+        await fetch("/api/sendFeedback", {
+          method: "POST",
+          body: JSON.stringify(values)
+        })
+      })();
     }} >
       <Form.Item
         name="email"
