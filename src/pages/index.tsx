@@ -1,4 +1,4 @@
-import { Button, DatePicker, Flex, Select } from "antd";
+import { Button, DatePicker, Flex, Select, Modal,Input, message, Form  } from "antd";
 import dayjs from "dayjs";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Head from "next/head";
@@ -39,6 +39,11 @@ export default function Home({
 
   const [selectedDate, setSelectedDate] = useState<string | null>(initialDate);
   const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
+
+  const [messageApi, messageContextHolder] = message.useMessage();
+
+  const [fbForm] = Form.useForm();
+  const [isFbModalOpen, setIsFbModalOpen] = useState<boolean>(false);
 
   const getTrains = useCallback(async (date: string) => {
     setTrainsLoaded(false);
@@ -97,6 +102,84 @@ export default function Home({
         <meta property="og:url" content={getBaseURL() + "/"} />
         <link rel="canonical" href={getBaseURL() + "/"} />
       </Head>
+
+      {messageContextHolder}
+
+      {/* Feedback modal */}
+      <Modal
+        title="Palautelaatikko"
+        open={isFbModalOpen}
+        onOk={() => {
+          setIsFbModalOpen(false);
+          fbForm.resetFields()
+        }}
+        onCancel={() => {
+          setIsFbModalOpen(false);
+          fbForm.resetFields()
+        }}
+        centered={true}
+        footer={[
+          <Button key="back" onClick={()=>{
+            setIsFbModalOpen(false)
+            fbForm.resetFields()
+          }}>
+            Peruuta
+          </Button>,
+          <Button form="myForm" key="submit" htmlType="submit" onClick={()=>{
+            fbForm.submit()
+          }} type="primary">
+            Lähetä
+          </Button>
+        ]}
+      >
+
+
+    <Form form={fbForm} layout="vertical" style={{marginTop:"2em"}} onFinish={async (values) => {
+      console.log(values)
+      setIsFbModalOpen(false)
+      fbForm.resetFields()
+      messageApi
+      .open({
+        type: "success",
+        content: "Kiitos palautteesta!",
+      })
+      .then(
+        () => null,
+        () => null
+      );
+
+      await fetch("/api/sendFeedback", {
+        method: "POST",
+        body: JSON.stringify(values)
+      })
+    }} >
+      <Form.Item
+        name="email"
+        label="Sähköposti (Vapaaehtoinen)"
+        rules={[
+          {
+            type: 'email',
+            message: 'Syötä kelvollinen sähköpostiosoite!',
+          },
+        ]}
+      >
+        <Input />
+      </Form.Item>
+
+      <Form.Item
+        label="Palaute"
+        name="feedback"
+        rules={[{ required: true, message: 'Tyhjää palautetta ei voi lähettää!' },{max: 1500,message: "Maksimipituus on 1500 merkkiä!",}]}
+      >
+        <Input.TextArea 
+          placeholder="Anna palautetta tai kehitysideoita..."
+          autoSize={{ minRows: 3, maxRows: 5 }}
+        />
+      </Form.Item>
+    </Form>
+
+      </Modal>
+
       <Flex
         style={{ width: "100%", gap: "5px" }}
         justify={"center"}
@@ -204,6 +287,29 @@ export default function Home({
         </Button>
 
         <div style={{ position: "absolute", bottom: "0", textAlign: "center" }}>
+          <Button
+            onClick={() => setIsFbModalOpen(true)}
+            style={{
+              fontWeight: "bold",
+              height: "40px",
+              fontSize: "16px",
+              marginBottom: "10px",
+            }}
+          >
+            ✨ Anna palautetta ✨{" "}
+            <span
+              style={{
+                backgroundColor: "rgba(0, 0, 200, 0.2)",
+                borderRadius: "10px",
+                padding: "1px 7px",
+                marginLeft: "5px",
+                boxSizing: "border-box",
+              }}
+            >
+              Beta
+            </span>
+          </Button>
+
           <p style={{ color: "#949090" }}>
             Tämä on{" "}
             <a
