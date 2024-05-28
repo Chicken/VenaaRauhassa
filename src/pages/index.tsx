@@ -292,24 +292,13 @@ export default function Home({
           <Button
             onClick={() => setIsFbModalOpen(true)}
             style={{
-              fontWeight: "bold",
+              fontWeight: 500,
               height: "40px",
               fontSize: "16px",
               marginBottom: "10px",
             }}
           >
-            ✨ Anna palautetta ✨{" "}
-            <span
-              style={{
-                backgroundColor: "rgba(0, 0, 200, 0.2)",
-                borderRadius: "10px",
-                padding: "1px 7px",
-                marginLeft: "5px",
-                boxSizing: "border-box",
-              }}
-            >
-              Beta
-            </span>
+            💬 Anna palautetta
           </Button>
 
           <p style={{ color: "#949090" }}>
