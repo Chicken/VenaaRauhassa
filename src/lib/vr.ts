@@ -300,7 +300,7 @@ export async function getInitialTrains(date: string) {
   const initialTrains = trainsResponseSchema.parse(initialTrainsUnchecked);
 
   return initialTrains
-    .filter((t) => ["IC", "S"].includes(t.trainType))
+    .filter((t) => ["IC", "S", "PYO"].includes(t.trainType))
     .map((t) => {
       const departure = t.timeTableRows[0];
       const arrival = t.timeTableRows[t.timeTableRows.length - 1];

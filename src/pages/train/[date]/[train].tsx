@@ -41,7 +41,7 @@ function getSeatId(event: MouseEvent) {
 function getSeatSelector(type: string, number: number): string {
   switch (type) {
     case "BED":
-      return `#highlight_${number} + path`;
+      return `#highlight_${number}`;
     default:
       return `#seat_${number}_shape`;
   }
