@@ -11,9 +11,9 @@ import { ZodError } from "zod";
 import { hueShift } from "~/lib/colors";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { useStickyState } from "~/lib/hooks/useStickyState";
+import { error } from "~/lib/logger";
 import { getStations, getTrainOnDate } from "~/lib/vr";
 import { LegendModal } from "../../../components/LegendModal";
-import { error } from "~/lib/logger";
 
 function getSeatId(event: MouseEvent) {
   if (!(event.target instanceof Element)) {
@@ -41,7 +41,7 @@ function getSeatId(event: MouseEvent) {
 function getSeatSelector(type: string, number: number): string {
   switch (type) {
     case "BED":
-      return `#highlight_${number}`;
+      return `#highlight_${number}, #highlight_${number} + path`;
     default:
       return `#seat_${number}_shape`;
   }
@@ -322,12 +322,18 @@ export default function TrainPage({
   // TODO: maybe even og:image with @vercel/og
 
   const totalSeats = wagons.reduce(
-    (a, c) => a + c.floors.reduce((a2, c2) => a2 + c2.seats.length, 0),
+    (a, c) =>
+      a + c.floors.reduce((a2, c2) => a2 + c2.seats.filter((s) => s.type !== "VEHICLE").length, 0),
     0
   );
   const ecoSeatObjs = wagons.flatMap((w) =>
     w.floors.flatMap((f) =>
-      f.seats.filter((seat) => seat.productType === "ECO_CLASS_SEAT" && seat.services.length === 0)
+      f.seats.filter(
+        (seat) =>
+          seat.productType === "ECO_CLASS_SEAT" &&
+          seat.type !== "VEHICLE" &&
+          seat.services.length === 0
+      )
     )
   );
   const ecoSeats = ecoSeatObjs.length;
@@ -510,6 +516,51 @@ export default function TrainPage({
         }}
       >
         {wagons.map((wagon) => {
+          if (wagon.placeType === "VEHICLE") {
+            return null;
+            // if we ever want to show vehicle wagons
+            // also the below serves as a great "empty" wagon for errors if necessary in the future
+            /*
+            return (
+              <div
+                key={wagon.number}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {[...wagon.floors].reverse().map((floor) => (
+                  <div
+                    className={"wagon-svg"}
+                    key={floor.number}
+                    style={{
+                      aspectRatio: "calc(1587 + 12) / calc(237 + 12)",
+                      padding: "6px",
+                      boxSizing: "border-box",
+                    }}
+                    data-wagon={wagon.number}
+                  >
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "calc(100% - 2 * 6px)",
+                        border: "3px solid #e0e0e0",
+                        backgroundColor: "#f2f2f2",
+                        boxSizing: "border-box",
+                        borderRadius: "18px",
+                        margin: "6px 0px",
+                      }}
+                    ></div>
+                  </div>
+                ))}
+
+                <div style={{ textAlign: "center" }}>
+                  <span style={{ fontWeight: "bold", fontSize: 20 }}>{wagon.number}</span>
+                </div>
+              </div>
+            );
+            */
+          }
           return (
             <div
               key={wagon.number}
@@ -660,6 +711,7 @@ export default function TrainPage({
 
             function groupScore(group: Seat[]) {
               if (!group.length) return 1;
+              // should probably use time occupied instead of just stations
               return (
                 group.reduce(
                   (a, c) =>
@@ -677,10 +729,10 @@ export default function TrainPage({
                   .filter(
                     (s) =>
                       s.productType === "ECO_CLASS_SEAT" &&
+                      s.type === "SEAT" &&
                       ["WHEELCHAIR", "COMPARTMENT", "PETS", "PET-COACH"].every(
                         (tSrv) => !s.services.some((srv) => srv.includes(tSrv))
                       ) &&
-                      // should probably use time occupied instead of just stations
                       s.status.slice(timeRange[0], timeRange[1]).every((r) => r === "open")
                   )
                   .map((s) => {
@@ -864,7 +916,11 @@ export const getServerSideProps = (async (context) => {
 
   context.res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
 
-  if (!context.params || typeof context.params.date !== "string" || typeof context.params.train !== "string") {
+  if (
+    !context.params ||
+    typeof context.params.date !== "string" ||
+    typeof context.params.train !== "string"
+  ) {
     return { props: { state: "error" } };
   }
 
@@ -913,12 +969,22 @@ export const getServerSideProps = (async (context) => {
         station: allStations[station.stationShortCode] ?? station.stationShortCode,
       }));
 
-    const wagons = Object.values(train.timeTableRows[0]!.wagons)
-      .filter((w) => w.placeType !== "VEHICLE")
+    const rawWagons: (typeof train)["timeTableRows"][number]["wagons"][string][] = [];
+
+    for (const timeTableRow of train.timeTableRows) {
+      for (const wagon of Object.values(timeTableRow.wagons)) {
+        if (!rawWagons.some((w) => w.number === wagon.number)) {
+          rawWagons.push(wagon);
+        }
+      }
+    }
+
+    const wagons = rawWagons
       .sort((w1, w2) => w2.number - w1.number)
       .map((wagon) => ({
         number: wagon.number,
         type: wagon.type,
+        placeType: wagon.placeType,
         floors: Array(wagon.floorCount)
           .fill(0)
           .map((_, floor) => ({
@@ -1001,11 +1067,14 @@ export const getServerSideProps = (async (context) => {
     if (e instanceof ZodError) {
       console.error(e.issues, e.issues[0]);
     }
-    await error({
-      date: context.params.date,
-      train: context.params.train,
-      url: "<" + getBaseURL() + context.resolvedUrl + ">",
-    }, e);
+    await error(
+      {
+        date: context.params.date,
+        train: context.params.train,
+        url: "<" + getBaseURL() + context.resolvedUrl + ">",
+      },
+      e
+    );
     context.res.statusCode = 500;
     return { props: { state: "error", date: context.params.date } };
   }
@@ -1025,6 +1094,7 @@ export const getServerSideProps = (async (context) => {
         wagons: {
           number: number;
           type: string;
+          placeType: string | null;
           floors: Floor[];
         }[];
       }
