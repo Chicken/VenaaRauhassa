@@ -4,7 +4,7 @@ body {
   margin: 0;
   color: #343232;
   font-family: geist;
- background-color: 'rgb(245, 245, 245)';
+  background-color: "rgb(245, 245, 245)";
 }
 
 #wagon-map::-webkit-scrollbar {
@@ -51,12 +51,10 @@ body {
   }
 }
 
-
-
 .minimap {
   display: flex;
   overflow: hidden;
-/*   border: 1px solid blue; */
+  /*   border: 1px solid blue; */
   height: 70px;
   margin-top: 10px;
   position: relative;
@@ -65,9 +63,12 @@ body {
   width: 50%;
   margin-left: auto;
   margin-right: auto;
+  cursor: pointer;
 }
 
-.minimap-wagon, .minimap-locomotive-left, .minimap-locomotive-right  {
+.minimap-wagon,
+.minimap-locomotive-left,
+.minimap-locomotive-right {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -85,7 +86,6 @@ body {
 .minimap-locomotive-right {
   border-top-right-radius: 40px;
 }
-
 
 @media (max-width: 1200px) {
   .minimap {

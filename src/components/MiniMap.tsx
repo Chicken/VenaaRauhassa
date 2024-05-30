@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 interface Wagon {
   number: number;
@@ -7,70 +7,60 @@ interface Wagon {
 
 interface MiniMapProps {
   wagons: Wagon[];
-  mainMapRef: React.RefObject<HTMLDivElement>;
+  mainMapRef: HTMLDivElement | null;
 }
 
-const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
-  const miniMapRef = useRef<HTMLDivElement>(null);
+export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
+  const [miniMapRef, setMiniMapRef] = useState<HTMLDivElement | null>(null);
   const [boxPosition, setBoxPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
+  const [, forceUpdate] = useReducer<(x: number) => number>((x) => x + 1, 0);
 
   useEffect(() => {
-    const mainMap = mainMapRef.current;
-    const miniMap = miniMapRef.current;
-
-    if (mainMap && miniMap) {
+    if (mainMapRef && miniMapRef) {
       const syncScroll = () => {
-        const maxMainScrollLeft = mainMap.scrollWidth - mainMap.clientWidth;
-        const boxWidth = (miniMap.clientWidth / wagons.length) * 1.5;
-        const maxMiniBoxLeft = miniMap.clientWidth - boxWidth;
-        const newLeft = (mainMap.scrollLeft / maxMainScrollLeft) * maxMiniBoxLeft;
+        const maxMainScrollLeft = mainMapRef.scrollWidth - mainMapRef.clientWidth;
+        const boxWidth = (mainMapRef.clientWidth / mainMapRef.scrollWidth) * miniMapRef.clientWidth;
+        const maxMiniBoxLeft = miniMapRef.clientWidth - boxWidth;
+        const newLeft = (mainMapRef.scrollLeft / maxMainScrollLeft) * maxMiniBoxLeft;
         setBoxPosition(newLeft);
       };
 
-      mainMap.addEventListener("scroll", syncScroll);
-
-      return () => {
-        mainMap.removeEventListener("scroll", syncScroll);
-      };
+      mainMapRef.addEventListener("scroll", syncScroll);
+      return () => mainMapRef.removeEventListener("scroll", syncScroll);
     }
-  }, [mainMapRef, wagons.length]);
+  }, [miniMapRef, mainMapRef]);
 
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    setIsDragging(true);
-  };
-
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setIsDragging(false);
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-  };
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+  }, []);
 
-  const handleDrag = (clientX: number) => {
-    const miniMap = miniMapRef.current;
-    const mainMap = mainMapRef.current;
+  const handleDrag = useCallback(
+    (clientX: number) => {
+      if (miniMapRef && mainMapRef) {
+        const boxWidth = (mainMapRef.clientWidth / mainMapRef.scrollWidth) * miniMapRef.clientWidth;
+        const maxMiniBoxLeft = miniMapRef.clientWidth - boxWidth;
+        const newLeft = Math.min(
+          Math.max(0, clientX - miniMapRef.offsetLeft - boxWidth / 2),
+          maxMiniBoxLeft
+        );
 
-    if (miniMap && mainMap) {
-      const boxWidth = (miniMap.clientWidth / wagons.length) * 1.5;
-      const maxMiniBoxLeft = miniMap.clientWidth - boxWidth;
-      const newLeft = Math.min(Math.max(0, clientX - miniMap.offsetLeft - boxWidth / 2), maxMiniBoxLeft);
+        setBoxPosition(newLeft);
 
-      setBoxPosition(newLeft);
+        const maxMainScrollLeft = mainMapRef.scrollWidth - mainMapRef.clientWidth;
+        const newScrollLeft = (newLeft / maxMiniBoxLeft) * maxMainScrollLeft;
 
-      const maxMainScrollLeft = mainMap.scrollWidth - mainMap.clientWidth;
-      const newScrollLeft = (newLeft / maxMiniBoxLeft) * maxMainScrollLeft;
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = requestAnimationFrame(() => {
+          mainMapRef.scrollLeft = newScrollLeft;
+        });
       }
-
-      animationFrameRef.current = requestAnimationFrame(() => {
-        mainMap.scrollLeft = newScrollLeft;
-      });
-    }
-  };
+    },
+    [miniMapRef, mainMapRef]
+  );
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -78,16 +68,29 @@ const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
         handleDrag(e.clientX);
       }
     },
-    [isDragging]
+    [isDragging, handleDrag]
   );
 
   const handleTouchMove = useCallback(
     (e: TouchEvent) => {
-      if (isDragging && e.touches.length === 1 ) {
+      if (isDragging && e.touches.length === 1) {
         handleDrag(e.touches[0]!.clientX);
       }
     },
-    [isDragging]
+    [isDragging, handleDrag]
+  );
+
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      setIsDragging(true);
+      const event = e.nativeEvent;
+      if (event instanceof MouseEvent) {
+        handleDrag(event.clientX);
+      } else {
+        if (event.touches?.length) handleDrag(event.touches[0]!.clientX);
+      }
+    },
+    [handleDrag]
   );
 
   useEffect(() => {
@@ -104,12 +107,22 @@ const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
         window.removeEventListener("touchend", handleDragEnd);
       };
     }
-  }, [isDragging, handleMouseMove, handleTouchMove]);
+  }, [isDragging, handleMouseMove, handleTouchMove, handleDragEnd]);
 
-  const boxWidth = miniMapRef.current ? `${1.5 * (100 / wagons.length)}%` : "0";
+  useEffect(() => {
+    const onResize = () => forceUpdate();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  });
 
   return (
-    <div id="mini-map" ref={miniMapRef} className="minimap">
+    <div
+      id="mini-map"
+      ref={(ref) => setMiniMapRef(ref)}
+      className="minimap"
+      onMouseDown={handleDragStart}
+      onTouchStart={handleDragStart}
+    >
       {wagons.map((wagon, idx) => {
         let wagonClass;
 
@@ -131,20 +144,16 @@ const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
         );
       })}
       <div
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
         style={{
           position: "absolute",
           top: 0,
           left: `${boxPosition}px`,
-          width: boxWidth,
+          width: mainMapRef ? `${(mainMapRef.clientWidth / mainMapRef.scrollWidth) * 100}%` : "0",
           height: "100%",
           backgroundColor: "rgba(0, 0, 0, 0.3)",
-          cursor: "pointer",
+          borderRadius: "5px",
         }}
       />
     </div>
   );
 };
-
-export default MiniMap;
