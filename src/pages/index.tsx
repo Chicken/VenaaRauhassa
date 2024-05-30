@@ -29,6 +29,7 @@ const slogans = [
 export default function Home({
   initialDate,
   initialTrains,
+  maintenance,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const router = useRouter();
   const [sloganText, setSloganText] = useState<string | null>(null);
@@ -211,7 +212,7 @@ export default function Home({
         </p>
         <br />
 
-        {isInMaintenance() && (
+        {maintenance && (
           <h2
             style={{
               textAlign: "center",
@@ -225,7 +226,7 @@ export default function Home({
 
         <DatePicker
           placeholder="Valitse päivä"
-          disabled={isInMaintenance()}
+          disabled={maintenance}
           disabledDate={(current) => current && current < dayjs().subtract(2, "day")}
           defaultValue={dayjs(initialDate)}
           style={pickerStyle}
@@ -243,7 +244,7 @@ export default function Home({
         <br />
         <Select
           style={pickerStyle}
-          disabled={isInMaintenance() || (selectedDate && trainsLoaded ? false : true)}
+          disabled={maintenance || (selectedDate && trainsLoaded ? false : true)}
           loading={selectedDate && !trainsLoaded ? true : false}
           showSearch
           allowClear
@@ -278,7 +279,7 @@ export default function Home({
         <br />
 
         <Button
-          disabled={isInMaintenance() || (selectedDate && selectedTrain ? false : true)}
+          disabled={maintenance || (selectedDate && selectedTrain ? false : true)}
           loading={trainLoading}
           onClick={() => {
             setTrainLoading(true);
@@ -361,12 +362,14 @@ export const getServerSideProps = (async ({ res, query }) => {
 
   return {
     props: {
+      maintenance: isInMaintenance(),
       initialDate,
       initialTrains,
     },
   };
 }) satisfies GetServerSideProps<{
   initialDate: string;
+  maintenance: boolean;
   initialTrains: {
     value: string;
     label: string;

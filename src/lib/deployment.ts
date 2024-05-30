@@ -7,5 +7,5 @@ export function getBaseURL(): string {
 }
 
 export function isInMaintenance(): boolean {
-  return env.NEXT_PUBLIC_MAINTENANCE === "true";
+  return env.MAINTENANCE_MODE === "true";
 }

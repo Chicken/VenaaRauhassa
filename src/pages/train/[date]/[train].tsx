@@ -55,6 +55,7 @@ export default function TrainPage({
   train,
   stations,
   wagons,
+  maintenance,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   if (process.env.NODE_ENV === "development") console.debug(state, train, stations, wagons);
 
@@ -275,7 +276,7 @@ export default function TrainPage({
           <title>VenaaRauhassa - Virhe</title>
           <meta name="robots" content="noindex,nofollow" />
         </Head>
-        {isInMaintenance() ? (
+        {maintenance ? (
           <h1>Palvelu huoltokatkolla...</h1>
         ) : (
           <h1>Virhe tapahtui junaa haettaessa, yritä uudelleen</h1>
@@ -285,7 +286,7 @@ export default function TrainPage({
         >
           <LeftCircleOutlined /> Takaisin
         </Button>
-        {!isInMaintenance() && (
+        {!maintenance && (
           <Button onClick={() => window.location.reload()}>
             <ReloadOutlined /> Yritä uudelleen
           </Button>
@@ -910,6 +911,7 @@ export const getServerSideProps = (async (context) => {
     return {
       props: {
         state: "error",
+        maintenance: true,
       },
     };
   }
@@ -1106,6 +1108,7 @@ export const getServerSideProps = (async (context) => {
       }
     | {
         state: "error";
+        maintenance?: boolean;
       }
   ) & { date?: string }
 >;
