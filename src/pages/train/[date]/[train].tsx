@@ -1108,19 +1108,9 @@ export const getServerSideProps = (async (context) => {
         state: "success";
         initialRange: number[];
         initialSelectedSeat: number[] | null;
-        train: NonNullable<Awaited<ReturnType<typeof getTrainOnDate>>>;
-        stations: {
-          arrivalTime: number | null;
-          departureTime: number | null;
-          stationShortCode: string;
-          station: string;
-        }[];
-        wagons: {
-          number: number;
-          type: string;
-          placeType: string | null;
-          floors: Floor[];
-        }[];
+        train: Train;
+        stations: Station[];
+        wagons: Wagon[];
       }
     | {
         state: "train-not-found";
@@ -1135,13 +1125,29 @@ export const getServerSideProps = (async (context) => {
   ) & { date?: string }
 >;
 
-type Floor = {
+export type Train = NonNullable<Awaited<ReturnType<typeof getTrainOnDate>>>;
+
+export type Station = {
+  arrivalTime: number | null;
+  departureTime: number | null;
+  stationShortCode: string;
+  station: string;
+}
+
+export type Wagon = {
+  number: number;
+  type: string;
+  placeType: string | null;
+  floors: Floor[];
+};
+
+export type Floor = {
   number: number;
   image: string;
   seats: Seat[];
 };
 
-type Seat = {
+export type Seat = {
   number: number;
   section: number;
   status: ("open" | "reserved" | "unavailable")[];

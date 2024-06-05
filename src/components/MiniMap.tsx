@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
-
-interface Wagon {
-  number: number;
-  // Lisää tähän muut mahdolliset wagon-ominaisuudet
-}
+import { Easing, animate } from "~/lib/animate";
+import type { Wagon } from "~/pages/train/[date]/[train]";
 
 interface MiniMapProps {
   wagons: Wagon[];
@@ -15,6 +12,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
   const [boxPosition, setBoxPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
+  const cancelClickAnimationRef = useRef<(() => void) | null>(null);
   const [, forceUpdate] = useReducer<(x: number) => number>((x) => x + 1, 0);
 
   useEffect(() => {
@@ -31,6 +29,29 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
       return () => mainMapRef.removeEventListener("scroll", syncScroll);
     }
   }, [miniMapRef, mainMapRef]);
+
+  const handleMapClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (miniMapRef && mainMapRef) {
+        const boxWidth = (mainMapRef.clientWidth / mainMapRef.scrollWidth) * miniMapRef.clientWidth;
+        const maxMiniBoxLeft = miniMapRef.clientWidth - boxWidth;
+        const newLeft = Math.min(
+          Math.max(0, e.clientX - miniMapRef.offsetLeft - boxWidth / 2),
+          maxMiniBoxLeft
+        );
+
+        const maxMainScrollLeft = mainMapRef.scrollWidth - mainMapRef.clientWidth;
+        const oldScrollLeft = mainMapRef.scrollLeft;
+        const newScrollLeft = (newLeft / maxMiniBoxLeft) * maxMainScrollLeft;
+        if (cancelClickAnimationRef.current) cancelClickAnimationRef.current();
+        cancelClickAnimationRef.current = animate((t) => {
+          mainMapRef.scrollLeft =
+            oldScrollLeft + (newScrollLeft - oldScrollLeft) * Easing.easeInOutQuad(t);
+        }, 200);
+      }
+    },
+    [miniMapRef, mainMapRef]
+  );
 
   const handleDragEnd = useCallback(() => {
     setIsDragging(false);
@@ -115,35 +136,48 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
     return () => window.removeEventListener("resize", onResize);
   });
 
+  const hasDoubleDeckers = wagons.some((wagon) => wagon.floors.length > 1);
+
   return (
     <div
       id="mini-map"
       ref={(ref) => setMiniMapRef(ref)}
       className="minimap"
-      onMouseDown={handleDragStart}
-      onTouchStart={handleDragStart}
+      onClick={handleMapClick}
+      style={{ height: hasDoubleDeckers ? "80px" : "50px" }}
     >
       {wagons.map((wagon, idx) => {
-        let wagonClass;
-
-        switch (idx) {
-          case 0:
-            wagonClass = "minimap-locomotive-left";
-            break;
-          case wagons.length - 1:
-            wagonClass = "minimap-locomotive-right";
-            break;
-          default:
-            wagonClass = "minimap-wagon";
-        }
-
+        const wagonHasUpstairs = wagon.floors.length > 1;
         return (
-          <div key={wagon.number} className={wagonClass}>
-            <span style={{ fontWeight: "bold", fontSize: 10 }}>{wagon.number}</span>
+          <div key={wagon.number} className="minimap-wagon-container">
+            {wagon.floors.map((floor) => {
+              const isLeft = idx === 0;
+              const isRight = idx === wagons.length - 1;
+              const isEnd = isLeft || isRight;
+              const isTop = !wagonHasUpstairs || floor.number === 1;
+              let className = "minimap-wagon";
+              if (isEnd && isTop)
+                className = isLeft ? "minimap-locomotive-left" : "minimap-locomotive-right";
+              return (
+                <div
+                  key={floor.number}
+                  className={className}
+                  style={{
+                    height: hasDoubleDeckers ? (wagonHasUpstairs ? "50%" : "70%") : "100%",
+                  }}
+                >
+                  <span style={{ fontWeight: "bold", fontSize: "12px", paddingLeft: "8px" }}>
+                    {wagon.number}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         );
       })}
       <div
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
         style={{
           position: "absolute",
           top: 0,

@@ -54,8 +54,6 @@ body {
 .minimap {
   display: flex;
   overflow: hidden;
-  /*   border: 1px solid blue; */
-  height: 70px;
   margin-top: 10px;
   position: relative;
   user-select: none;
@@ -66,17 +64,21 @@ body {
   cursor: pointer;
 }
 
+.minimap-wagon-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 .minimap-wagon,
 .minimap-locomotive-left,
 .minimap-locomotive-right {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
   border: 2px solid rgb(139, 139, 139);
   border-radius: 5px;
-  text-align: center;
   background-color: #e9e9e9;
-  flex: 1;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
 }
 
 .minimap-locomotive-left {
@@ -86,6 +88,7 @@ body {
 .minimap-locomotive-right {
   border-top-right-radius: 40px;
 }
+
 
 @media (max-width: 1200px) {
   .minimap {
