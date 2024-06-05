@@ -48,6 +48,8 @@ function getSeatSelector(type: string, number: number): string {
   }
 }
 
+// TODO: site is slow, have some sort of loading skeleton, also for index
+
 export default function TrainPage({
   state,
   date,
@@ -321,9 +323,8 @@ export default function TrainPage({
 
   const fiDate = train.departureDate.split("-").reverse().map(Number).join(".");
 
-  // TODO: when range is set, show cooler information
-  // TODO: when seat is set, show cooler information
-  // TODO: maybe even og:image with @vercel/og
+  // TODO: when range is set, show cooler metadata information for embeds
+  // TODO: when seat is set, show cooler metadata information for embeds
 
   const totalSeats = wagons.reduce(
     (a, c) =>
@@ -528,7 +529,7 @@ export default function TrainPage({
               if (wagon.placeType === "VEHICLE") {
                 return null;
                 // if we ever want to show vehicle wagons
-                // also the below serves as a great "empty" wagon for errors if necessary in the future
+                // also the below serves as a great "empty" wagon for errors or loading skeletons if necessary in the future
                 /*
               return (
                 <div
@@ -617,6 +618,8 @@ export default function TrainPage({
                           petCoach ||
                           pet ||
                           bed;
+
+                        // TODO: show "kiintiöpaikat" with some color / border because they show up as "reserved" but actually arent
 
                         const proxies = [
                           <SvgProxy
@@ -729,7 +732,7 @@ export default function TrainPage({
 
                 function groupScore(group: Seat[]) {
                   if (!group.length) return 1;
-                  // should probably use time occupied instead of just stations
+                  // TODO: should probably use time occupied instead of just stations
                   return (
                     group.reduce(
                       (a, c) =>
@@ -776,7 +779,7 @@ export default function TrainPage({
 
                 const posToNum = (pos: string | null) => (pos === "WINDOW" ? 1 : 0);
 
-                // this sorting and filtering is very primitive and the logic should be fine tuned to be more human-like
+                // TODO: this sorting and filtering is very primitive and the logic should be fine tuned to be more human-like
 
                 possibleSeats.sort((s1, s2) => {
                   if (s1.group.length - s2.group.length) return s1.group.length - s2.group.length;
@@ -1032,7 +1035,7 @@ export const getServerSideProps = (async (context) => {
                     (place2) => place2.number === place.number
                   );
                   if (!rowPlace) {
-                    // VR API IS VERY STUPID
+                    // VR API IS VERY STUPID AND SOMETIMES IS JUST MISSING PLACES
                     return "reserved";
                     // throw new Error(
                     //   `Place ${place.number} not found wagon ${wagon.number} of ${train.trainNumber} from ${row.dep.stationShortCode} to ${row.arr.stationShortCode} on ${train.departureDate}`

@@ -138,6 +138,8 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
 
   const hasDoubleDeckers = wagons.some((wagon) => wagon.floors.length > 1);
 
+  // TODO: weird centered background scrolling like VR has
+
   return (
     <div
       id="mini-map"
@@ -158,6 +160,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
               let className = "minimap-wagon";
               if (isEnd && isTop)
                 className = isLeft ? "minimap-locomotive-left" : "minimap-locomotive-right";
+              // TODO: show icons for stuff like extra, restaurant, pets, etc.
               return (
                 <div
                   key={floor.number}
