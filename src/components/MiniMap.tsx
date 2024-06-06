@@ -49,6 +49,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
       let reverseTimeout: ReturnType<typeof setTimeout> | null = null;
       let syncScroll: () => void = null!;
       let reverseSyncScroll: () => void = null!;
+      let removed = false;
       syncScroll = () => {
         const maxMainScrollLeft = mainMapRef.scrollWidth - mainMapRef.clientWidth;
         const maxMiniScrollLeft = miniMapRef.scrollWidth - miniMapRef.clientWidth;
@@ -59,7 +60,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
         syncAnimFrame = window.requestAnimationFrame(() => {
           miniMapRef.scrollLeft = (mainMapRef.scrollLeft / maxMainScrollLeft) * maxMiniScrollLeft;
           syncTimeout = setTimeout(
-            () => miniMapRef.addEventListener("scroll", reverseSyncScroll),
+            () => !removed && miniMapRef.addEventListener("scroll", reverseSyncScroll),
             50
           );
         });
@@ -73,7 +74,10 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
         if (reverseSyncAnimFrame) cancelAnimationFrame(reverseSyncAnimFrame);
         reverseSyncAnimFrame = window.requestAnimationFrame(() => {
           mainMapRef.scrollLeft = (miniMapRef.scrollLeft / maxMiniScrollLeft) * maxMainScrollLeft;
-          reverseTimeout = setTimeout(() => mainMapRef.addEventListener("scroll", syncScroll), 50);
+          reverseTimeout = setTimeout(
+            () => !removed && mainMapRef.addEventListener("scroll", syncScroll),
+            50
+          );
         });
       };
       const syncResize = () => {
@@ -95,6 +99,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
       window.addEventListener("resize", syncResize);
       syncResize();
       return () => {
+        removed = true;
         mainMapRef.removeEventListener("scroll", syncScroll);
         miniMapRef.removeEventListener("scroll", reverseSyncScroll);
         window.removeEventListener("resize", syncResize);
