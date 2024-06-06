@@ -26,7 +26,7 @@ const App: AppType = ({ Component, pageProps }) => {
         <link rel="icon" href="/vr_favicon.png" sizes="any" />
       </Head>
 
-      <Layout className="layout" style={{ height: "100vh" }}>
+      <Layout className="layout" style={{ minHeight: "100vh" }}>
         <Content className="layoutPadding">
           <div className={`site-layout-content ${GeistSans.className}`}>
             <Component {...pageProps} />

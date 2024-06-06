@@ -6,8 +6,8 @@ interface FeedbackBody {
   email?: string;
 }
 interface ExtendedNextApiRequest extends NextApiRequest {
-    body: string
-  }
+  body: string;
+}
 
 export default async function handler(req: ExtendedNextApiRequest, res: NextApiResponse) {
   if (!env.FEEDBACK_DISCORD_WEBHOOK) {
@@ -15,7 +15,7 @@ export default async function handler(req: ExtendedNextApiRequest, res: NextApiR
     return;
   }
 
-  const { feedback, email }:FeedbackBody = JSON.parse(req.body) as FeedbackBody;
+  const { feedback, email }: FeedbackBody = JSON.parse(req.body) as FeedbackBody;
 
   const messageString = email
     ? "```Sähköposti: " + email + "\nPalaute: " + feedback + "```"

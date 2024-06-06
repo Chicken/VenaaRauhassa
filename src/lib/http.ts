@@ -18,9 +18,13 @@ const _postJSON = bent("POST", "json", {
   "User-Agent": userAgent,
 });
 
-export const postJSON = (async (url: string, body?: bent.RequestBody, headers?: Record<string, string>) => {
+export const postJSON = async (
+  url: string,
+  body?: bent.RequestBody,
+  headers?: Record<string, string>
+) => {
   try {
-    const res = await _postJSON(url, body, headers) as unknown;
+    const res = (await _postJSON(url, body, headers)) as unknown;
     return res;
   } catch (e: unknown) {
     if (e instanceof Error) {
@@ -33,15 +37,15 @@ export const postJSON = (async (url: string, body?: bent.RequestBody, headers?: 
     }
     throw e;
   }
-});
+};
 
 const _getJSON = bent("GET", "json", {
   "User-Agent": userAgent,
 });
 
-export const getJSON = (async (url: string, headers?: Record<string, string>) => {
+export const getJSON = async (url: string, headers?: Record<string, string>) => {
   try {
-    const res = await _getJSON(url, undefined, headers) as unknown;
+    const res = (await _getJSON(url, undefined, headers)) as unknown;
     return res;
   } catch (e: unknown) {
     if (e instanceof Error) {
@@ -52,4 +56,4 @@ export const getJSON = (async (url: string, headers?: Record<string, string>) =>
     }
     throw e;
   }
-});
+};
