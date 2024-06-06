@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useMediaQuery } from "react-responsive";
 import { Easing, animate } from "~/lib/animate";
 import type { Wagon } from "~/pages/train/[date]/[train]";
 
@@ -9,34 +10,107 @@ interface MiniMapProps {
 
 export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
   const [miniMapRef, setMiniMapRef] = useState<HTMLDivElement | null>(null);
-  const [boxPosition, setBoxPosition] = useState(0);
+  const [boxRef, setBoxRef] = useState<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
   const cancelClickAnimationRef = useRef<(() => void) | null>(null);
   const [, forceUpdate] = useReducer<(x: number) => number>((x) => x + 1, 0);
 
+  const isMobile = useMediaQuery({
+    maxWidth: 768,
+  });
+
   useEffect(() => {
-    if (mainMapRef && miniMapRef) {
+    if (!mainMapRef || !miniMapRef || !boxRef) return;
+    if (!isMobile) {
       const syncScroll = () => {
+        miniMapRef.style.paddingLeft = "0";
+        miniMapRef.style.paddingRight = "0";
         const maxMainScrollLeft = mainMapRef.scrollWidth - mainMapRef.clientWidth;
         const boxWidth = (mainMapRef.clientWidth / mainMapRef.scrollWidth) * miniMapRef.clientWidth;
         const maxMiniBoxLeft = miniMapRef.clientWidth - boxWidth;
         const newLeft = (mainMapRef.scrollLeft / maxMainScrollLeft) * maxMiniBoxLeft;
-        setBoxPosition(newLeft);
+        window.requestAnimationFrame(() => {
+          boxRef.style.left = `${newLeft}px`;
+          boxRef.style.width = `${boxWidth}px`;
+        });
       };
-
       mainMapRef.addEventListener("scroll", syncScroll);
-      return () => mainMapRef.removeEventListener("scroll", syncScroll);
+      window.addEventListener("resize", syncScroll);
+      syncScroll();
+      return () => {
+        mainMapRef.removeEventListener("scroll", syncScroll);
+        window.removeEventListener("resize", syncScroll);
+      };
+    } else {
+      let syncAnimFrame: number | null = null;
+      let reverseSyncAnimFrame: number | null = null;
+      let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+      let reverseTimeout: ReturnType<typeof setTimeout> | null = null;
+      let syncScroll: () => void = null!;
+      let reverseSyncScroll: () => void = null!;
+      syncScroll = () => {
+        const maxMainScrollLeft = mainMapRef.scrollWidth - mainMapRef.clientWidth;
+        const maxMiniScrollLeft = miniMapRef.scrollWidth - miniMapRef.clientWidth;
+
+        if (syncTimeout) clearTimeout(syncTimeout);
+        miniMapRef.removeEventListener("scroll", reverseSyncScroll);
+        if (syncAnimFrame) cancelAnimationFrame(syncAnimFrame);
+        syncAnimFrame = window.requestAnimationFrame(() => {
+          miniMapRef.scrollLeft = (mainMapRef.scrollLeft / maxMainScrollLeft) * maxMiniScrollLeft;
+          syncTimeout = setTimeout(
+            () => miniMapRef.addEventListener("scroll", reverseSyncScroll),
+            50
+          );
+        });
+      };
+      reverseSyncScroll = () => {
+        const maxMainScrollLeft = mainMapRef.scrollWidth - mainMapRef.clientWidth;
+        const maxMiniScrollLeft = miniMapRef.scrollWidth - miniMapRef.clientWidth;
+
+        if (reverseTimeout) clearTimeout(reverseTimeout);
+        mainMapRef.removeEventListener("scroll", syncScroll);
+        if (reverseSyncAnimFrame) cancelAnimationFrame(reverseSyncAnimFrame);
+        reverseSyncAnimFrame = window.requestAnimationFrame(() => {
+          mainMapRef.scrollLeft = (miniMapRef.scrollLeft / maxMiniScrollLeft) * maxMainScrollLeft;
+          reverseTimeout = setTimeout(() => mainMapRef.addEventListener("scroll", syncScroll), 50);
+        });
+      };
+      const syncResize = () => {
+        miniMapRef.style.paddingLeft = "0";
+        miniMapRef.style.paddingRight = "0";
+
+        const boxWidth = (mainMapRef.clientWidth / mainMapRef.scrollWidth) * miniMapRef.scrollWidth;
+        boxRef.style.width = `${boxWidth}px`;
+        boxRef.style.left = `calc(50% - ${boxWidth}px / 2)`;
+
+        const padding = miniMapRef.clientWidth / 2 - boxWidth / 2;
+        miniMapRef.style.paddingLeft = `${padding}px`;
+        miniMapRef.style.paddingRight = `${padding}px`;
+
+        syncScroll();
+      };
+      mainMapRef.addEventListener("scroll", syncScroll);
+      miniMapRef.addEventListener("scroll", reverseSyncScroll);
+      window.addEventListener("resize", syncResize);
+      syncResize();
+      return () => {
+        mainMapRef.removeEventListener("scroll", syncScroll);
+        miniMapRef.removeEventListener("scroll", reverseSyncScroll);
+        window.removeEventListener("resize", syncResize);
+      };
     }
-  }, [miniMapRef, mainMapRef]);
+  }, [isMobile, miniMapRef, mainMapRef, boxRef]);
 
   const handleMapClick = useCallback(
     (e: React.MouseEvent) => {
-      if (miniMapRef && mainMapRef) {
+      if (!miniMapRef || !mainMapRef || !boxRef) return;
+      if (!isMobile) {
         const boxWidth = (mainMapRef.clientWidth / mainMapRef.scrollWidth) * miniMapRef.clientWidth;
         const maxMiniBoxLeft = miniMapRef.clientWidth - boxWidth;
+        const bounding = miniMapRef.getBoundingClientRect();
         const newLeft = Math.min(
-          Math.max(0, e.clientX - miniMapRef.offsetLeft - boxWidth / 2),
+          Math.max(0, e.clientX - bounding.x - boxWidth / 2),
           maxMiniBoxLeft
         );
 
@@ -48,9 +122,24 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
           mainMapRef.scrollLeft =
             oldScrollLeft + (newScrollLeft - oldScrollLeft) * Easing.easeInOutQuad(t);
         }, 200);
+      } else {
+        const padding = miniMapRef.clientWidth / 2 - boxRef.clientWidth / 2;
+        const bounding = miniMapRef.getBoundingClientRect();
+        const xOnMap =
+          (miniMapRef.scrollLeft + e.clientX - bounding.x - padding) *
+          (mainMapRef.scrollWidth / (miniMapRef.scrollWidth - padding * 2));
+
+        const oldScrollLeft = mainMapRef.scrollLeft;
+        const newScrollLeft = xOnMap - mainMapRef.clientWidth / 2;
+
+        if (cancelClickAnimationRef.current) cancelClickAnimationRef.current();
+        cancelClickAnimationRef.current = animate((t) => {
+          mainMapRef.scrollLeft =
+            oldScrollLeft + (newScrollLeft - oldScrollLeft) * Easing.easeInOutQuad(t);
+        }, 200);
       }
     },
-    [miniMapRef, mainMapRef]
+    [isMobile, miniMapRef, mainMapRef, boxRef]
   );
 
   const handleDragEnd = useCallback(() => {
@@ -60,15 +149,11 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
 
   const handleDrag = useCallback(
     (clientX: number) => {
-      if (miniMapRef && mainMapRef) {
+      if (!isMobile && miniMapRef && mainMapRef && boxRef) {
         const boxWidth = (mainMapRef.clientWidth / mainMapRef.scrollWidth) * miniMapRef.clientWidth;
         const maxMiniBoxLeft = miniMapRef.clientWidth - boxWidth;
-        const newLeft = Math.min(
-          Math.max(0, clientX - miniMapRef.offsetLeft - boxWidth / 2),
-          maxMiniBoxLeft
-        );
-
-        setBoxPosition(newLeft);
+        const bounding = miniMapRef.getBoundingClientRect();
+        const newLeft = Math.min(Math.max(0, clientX - bounding.x - boxWidth / 2), maxMiniBoxLeft);
 
         const maxMainScrollLeft = mainMapRef.scrollWidth - mainMapRef.clientWidth;
         const newScrollLeft = (newLeft / maxMiniBoxLeft) * maxMainScrollLeft;
@@ -80,7 +165,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
         });
       }
     },
-    [miniMapRef, mainMapRef]
+    [isMobile, miniMapRef, mainMapRef, boxRef]
   );
 
   const handleMouseMove = useCallback(
@@ -138,59 +223,59 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
 
   const hasDoubleDeckers = wagons.some((wagon) => wagon.floors.length > 1);
 
-  // TODO: weird centered background scrolling like VR has
-
   return (
-    <div
-      id="mini-map"
-      ref={(ref) => setMiniMapRef(ref)}
-      className="minimap"
-      onClick={handleMapClick}
-      style={{ height: hasDoubleDeckers ? "80px" : "50px" }}
-    >
-      {wagons.map((wagon, idx) => {
-        const wagonHasUpstairs = wagon.floors.length > 1;
-        return (
-          <div key={wagon.number} className="minimap-wagon-container">
-            {wagon.floors.map((floor) => {
-              const isLeft = idx === 0;
-              const isRight = idx === wagons.length - 1;
-              const isEnd = isLeft || isRight;
-              const isTop = !wagonHasUpstairs || floor.number === 1;
-              let className = "minimap-wagon";
-              if (isEnd && isTop)
-                className = isLeft ? "minimap-locomotive-left" : "minimap-locomotive-right";
-              // TODO: show icons for stuff like extra, restaurant, pets, etc.
-              return (
-                <div
-                  key={floor.number}
-                  className={className}
-                  style={{
-                    height: hasDoubleDeckers ? (wagonHasUpstairs ? "50%" : "70%") : "100%",
-                  }}
-                >
-                  <span style={{ fontWeight: "bold", fontSize: "12px", paddingLeft: "8px" }}>
-                    {wagon.number}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
+    <div style={{ position: "relative" }}>
       <div
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: `${boxPosition}px`,
-          width: mainMapRef ? `${(mainMapRef.clientWidth / mainMapRef.scrollWidth) * 100}%` : "0",
-          height: "100%",
-          backgroundColor: "rgba(0, 0, 0, 0.3)",
-          borderRadius: "5px",
-        }}
-      />
+        id="mini-map"
+        ref={(ref) => setMiniMapRef(ref)}
+        className="minimap"
+        onClick={handleMapClick}
+        style={{ height: hasDoubleDeckers ? "80px" : "50px" }}
+      >
+        {wagons.map((wagon, idx) => {
+          const wagonHasUpstairs = wagon.floors.length > 1;
+          return (
+            <div key={wagon.number} className="minimap-wagon-container">
+              {wagon.floors.map((floor) => {
+                const isLeft = idx === 0;
+                const isRight = idx === wagons.length - 1;
+                const isEnd = isLeft || isRight;
+                const isTop = !wagonHasUpstairs || floor.number === 1;
+                let className = "minimap-wagon ";
+                if (isEnd && isTop)
+                  className += isLeft ? "minimap-locomotive-left" : "minimap-locomotive-right";
+                // TODO: show icons for stuff like extra, restaurant, pets, etc.
+                return (
+                  <div
+                    key={floor.number}
+                    className={className}
+                    style={{
+                      height: hasDoubleDeckers ? (wagonHasUpstairs ? "50%" : "70%") : "100%",
+                    }}
+                  >
+                    <span style={{ fontWeight: "bold", fontSize: "12px", paddingLeft: "8px" }}>
+                      {wagon.number}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+        <div
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          className="minimap-box"
+          ref={(ref) => setBoxRef(ref)}
+          style={{
+            position: "absolute",
+            top: 0,
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.3)",
+            borderRadius: "5px",
+          }}
+        ></div>
+      </div>
     </div>
   );
 };
