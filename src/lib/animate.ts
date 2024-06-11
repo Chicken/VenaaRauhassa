@@ -10,7 +10,7 @@ export function animate(animateFrame: (t: number) => void, duration: number) {
   }
 
   window.requestAnimationFrame((time) => frame(time));
-  return () => (cancelled = true);
+  return () => void (cancelled = true);
 }
 
 export const Easing = {

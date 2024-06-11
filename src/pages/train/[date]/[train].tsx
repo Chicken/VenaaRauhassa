@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { SvgLoader, SvgProxy } from "react-svgmt";
 import { ZodError } from "zod";
 import { MiniMap } from "~/components/MiniMap";
+import { Easing, animate } from "~/lib/animate";
 import { hueShift } from "~/lib/colors";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { useStickyState } from "~/lib/hooks/useStickyState";
@@ -111,36 +112,61 @@ export default function TrainPage({
   }, [router, train, stations, initialRange, initialSelectedSeat, timeRange, selectedSeat]);
 
   useEffect(() => {
-    if (!initialSelectedSeat) return;
+    if (!initialSelectedSeat || !mainMapRef) return;
+    let cancelAnimation: (() => void) | null = null;
     const timeout = setTimeout(() => {
       const seatEl = document.querySelector(
         `[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}_shape`
       );
       if (!seatEl) return;
-      seatEl.scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest",
-      });
+      const bounding = seatEl.getBoundingClientRect();
+      const mapBounding = mainMapRef.getBoundingClientRect();
+      const originalScroll = mainMapRef.scrollLeft;
+      const targetScroll =
+        mainMapRef.scrollLeft +
+        bounding.left -
+        mainMapRef.clientWidth / 2 -
+        mapBounding.left +
+        seatEl.clientWidth / 2;
+      if (Math.abs(originalScroll - targetScroll) < 10) {
+        mainMapRef.scrollLeft = targetScroll;
+        return;
+      }
+      cancelAnimation = animate((t) => {
+        mainMapRef.scrollLeft =
+          originalScroll + (targetScroll - originalScroll) * Easing.easeInOutQuad(t);
+      }, 300);
     }, 500);
-    return () => clearTimeout(timeout);
-  }, [initialSelectedSeat]);
+    return () => {
+      clearTimeout(timeout);
+      if (cancelAnimation) cancelAnimation();
+    };
+  }, [initialSelectedSeat, mainMapRef]);
 
   useEffect(() => {
-    if (!selectedSeat) return;
+    if (!selectedSeat || !mainMapRef) return;
     const seatEl = document.querySelector(
       `[data-wagon="${selectedSeat[0]}"] #seat_${selectedSeat[1]}_shape`
     );
     if (!seatEl) return;
-    const timeout = setTimeout(() => {
-      seatEl.scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest",
-      });
-    }, 0);
-    return () => clearTimeout(timeout);
-  }, [selectedSeat]);
+    const bounding = seatEl.getBoundingClientRect();
+    const mapBounding = mainMapRef.getBoundingClientRect();
+    const originalScroll = mainMapRef.scrollLeft;
+    const targetScroll =
+      mainMapRef.scrollLeft +
+      bounding.left -
+      mainMapRef.clientWidth / 2 -
+      mapBounding.left +
+      seatEl.clientWidth / 2;
+    if (Math.abs(originalScroll - targetScroll) < 10) {
+      mainMapRef.scrollLeft = targetScroll;
+      return;
+    }
+    return animate((t) => {
+      mainMapRef.scrollLeft =
+        originalScroll + (targetScroll - originalScroll) * Easing.easeInOutQuad(t);
+    }, 300);
+  }, [selectedSeat, mainMapRef]);
 
   useEffect(() => {
     const [leftHandle, rightHandle] = [...document.querySelectorAll(".ant-slider-handle")] as [
@@ -1135,7 +1161,7 @@ export type Station = {
   departureTime: number | null;
   stationShortCode: string;
   station: string;
-}
+};
 
 export type Wagon = {
   number: number;
