@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import { type GetServerSideProps, type InferGetServerSidePropsType } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 // @ts-expect-error no types exists
 import { SvgLoader, SvgProxy } from "react-svgmt";
 import { ZodError } from "zod";
@@ -143,30 +143,32 @@ export default function TrainPage({
     };
   }, [initialSelectedSeat, mainMapRef]);
 
-  useEffect(() => {
-    if (!selectedSeat || !mainMapRef) return;
-    const seatEl = document.querySelector(
-      `[data-wagon="${selectedSeat[0]}"] #seat_${selectedSeat[1]}_shape`
-    );
-    if (!seatEl) return;
-    const bounding = seatEl.getBoundingClientRect();
-    const mapBounding = mainMapRef.getBoundingClientRect();
-    const originalScroll = mainMapRef.scrollLeft;
-    const targetScroll =
-      mainMapRef.scrollLeft +
-      bounding.left -
-      mainMapRef.clientWidth / 2 -
-      mapBounding.left +
-      seatEl.clientWidth / 2;
-    if (Math.abs(originalScroll - targetScroll) < 10) {
-      mainMapRef.scrollLeft = targetScroll;
-      return;
-    }
-    return animate((t) => {
-      mainMapRef.scrollLeft =
-        originalScroll + (targetScroll - originalScroll) * Easing.easeInOutQuad(t);
-    }, 300);
-  }, [selectedSeat, mainMapRef]);
+  const changeSeatSelection = useCallback(
+    (wagon: number, seat: number, set: boolean) => {
+      if (!mainMapRef) return;
+      const seatEl = document.querySelector(`[data-wagon="${wagon}"] #seat_${seat}_shape`);
+      if (!seatEl) return;
+      const bounding = seatEl.getBoundingClientRect();
+      const mapBounding = mainMapRef.getBoundingClientRect();
+      const originalScroll = mainMapRef.scrollLeft;
+      const targetScroll =
+        mainMapRef.scrollLeft +
+        bounding.left -
+        mainMapRef.clientWidth / 2 -
+        mapBounding.left +
+        seatEl.clientWidth / 2;
+      if (Math.abs(originalScroll - targetScroll) < 10) {
+        mainMapRef.scrollLeft = targetScroll;
+        return;
+      }
+      animate((t) => {
+        mainMapRef.scrollLeft =
+          originalScroll + (targetScroll - originalScroll) * Easing.easeInOutQuad(t);
+        if (t === 1 && set) setSelectedSeat([wagon, seat]);
+      }, 200);
+    },
+    [mainMapRef, setSelectedSeat]
+  );
 
   useEffect(() => {
     const [leftHandle, rightHandle] = [...document.querySelectorAll(".ant-slider-handle")] as [
@@ -268,8 +270,11 @@ export default function TrainPage({
     };
 
     const mouseUpHandler = (e: MouseEvent) => {
-      if (Date.now() - timestamp < 150 && Math.abs(e.clientX - pos.x) < 50)
-        setSelectedSeat(getSeatId(e));
+      if (Date.now() - timestamp < 150 && Math.abs(e.clientX - pos.x) < 50) {
+        const seat = getSeatId(e);
+        setSelectedSeat(seat);
+        if (seat) setTimeout(() => changeSeatSelection(seat[0]!, seat[1]!, false), 100);
+      }
 
       el.style.cursor = "grab";
       el.style.removeProperty("user-select");
@@ -298,7 +303,7 @@ export default function TrainPage({
       document.removeEventListener("mouseup", mouseUpHandler);
       el.removeEventListener("mousedown", mouseDownHandler);
     };
-  }, []);
+  }, [changeSeatSelection]);
 
   if (state === "error") {
     return (
@@ -856,7 +861,7 @@ export default function TrainPage({
                 const randomSeat = best[Math.floor(Math.random() * best.length)]!;
                 if (process.env.NODE_ENV === "development") console.log(randomSeat);
 
-                setSelectedSeat([randomSeat.wagon, randomSeat.number]);
+                changeSeatSelection(randomSeat.wagon, randomSeat.number, true);
 
                 messageApi
                   .open({
