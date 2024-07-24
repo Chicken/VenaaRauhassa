@@ -1129,6 +1129,9 @@ export const getServerSideProps = (async (context) => {
       {
         date: context.params.date,
         train: context.params.train,
+        ...(e instanceof Error ? {
+          message: e.message
+        } : {}),
         url: "<" + getBaseURL() + context.resolvedUrl + ">",
       },
       e
