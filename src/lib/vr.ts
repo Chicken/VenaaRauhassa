@@ -229,7 +229,7 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
   const auth = await getVrAuth();
 
   train.timeTableRows = train.timeTableRows.filter(
-    (r) => r.trainStopping && r.commercialStop && !r.cancelled
+    (r) => r.trainStopping && r.commercialStop
   );
 
   const newTrain = {
