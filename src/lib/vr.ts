@@ -213,8 +213,6 @@ const trainResponseSchema = z.array(
         commercialStop: z.boolean().optional(),
         stationShortCode: z.string(),
         scheduledTime: z.string(),
-        cancelled: z.boolean(),
-        type: z.string(),
       })
     ),
   })
@@ -229,13 +227,7 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
 
   const auth = await getVrAuth();
 
-  train.timeTableRows = train.timeTableRows.filter(
-    (r, i, a) =>
-      r.trainStopping &&
-      r.commercialStop &&
-      !r.cancelled &&
-      (r.type === "DEPARTURE" && i > 0 ? !a[i - 1]?.cancelled : true)
-  );
+  train.timeTableRows = train.timeTableRows.filter((r) => r.trainStopping && r.commercialStop);
 
   const newTrain = {
     ...train,
