@@ -228,6 +228,23 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
   const auth = await getVrAuth();
 
   train.timeTableRows = train.timeTableRows.filter((r) => r.trainStopping && r.commercialStop);
+  // TODO: figure out a real solution for this problem
+  if (
+    train.timeTableRows
+      .slice(0, 2)
+      .map((ttr) => ttr.stationShortCode)
+      .join(",") === "TUS,TKU"
+  ) {
+    train.timeTableRows.splice(0, 2);
+  }
+  if (
+    train.timeTableRows
+      .slice(-2)
+      .map((ttr) => ttr.stationShortCode)
+      .join(",") === "TKU,TUS"
+  ) {
+    train.timeTableRows.splice(-2);
+  }
 
   const newTrain = {
     ...train,
