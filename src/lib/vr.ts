@@ -130,7 +130,7 @@ const wagonResponseSchema = z.object({
     z.string(),
     z.object({
       number: z.number(),
-      placeType: z.string().nullable(),
+      placeType: z.string().nullable().optional().transform((v) => v ?? null),
       type: z.string(),
       floorCount: z.number(),
       order: z.number(),
