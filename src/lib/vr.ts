@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { env } from "~/lib/env";
 import { getJSON, postJSON } from "~/lib/http";
+import { error } from "~/lib/logger";
 import { formatShortFinnishTime } from "./dateUtilities";
 
 const loginResponseSchema = z.object({
@@ -130,7 +131,11 @@ const wagonResponseSchema = z.object({
     z.string(),
     z.object({
       number: z.number(),
-      placeType: z.string().nullable().optional().transform((v) => v ?? null),
+      placeType: z
+        .string()
+        .nullable()
+        .optional()
+        .transform((v) => v ?? null),
       type: z.string(),
       floorCount: z.number(),
       order: z.number(),
@@ -255,22 +260,43 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
           const dep = train.timeTableRows[i * 2]!;
           const arr = train.timeTableRows[i * 2 + 1]!;
           const trainNumber = train.trainNumber.toString();
-          const wagons = await getWagonMapData(
-            dep.stationShortCode,
-            arr.stationShortCode,
-            new Date(dep.scheduledTime),
-            trainNumber,
-            auth.sessionId,
-            auth.token
-          );
-          return {
-            dep,
-            arr,
-            wagons,
-          };
+          try {
+            const wagons = await getWagonMapData(
+              dep.stationShortCode,
+              arr.stationShortCode,
+              new Date(dep.scheduledTime),
+              trainNumber,
+              auth.sessionId,
+              auth.token
+            );
+            return {
+              dep,
+              arr,
+              wagons,
+            };
+          } catch (e) {
+            void error(
+              {
+                date,
+                train: trainNumber,
+                message: "Wagon map data fetching failed",
+              },
+              e
+            ).catch(console.error);
+            return {
+              dep,
+              arr,
+              wagons: null,
+            };
+          }
         })
     ),
   };
+
+  const nullWagons = newTrain.timeTableRows.reduce((a, tt) => a + (tt.wagons == null ? 1 : 0), 0);
+  if (nullWagons == newTrain.timeTableRows.length || nullWagons > 3) {
+    throw new Error("Too many null wagons!");
+  }
 
   return newTrain;
 }

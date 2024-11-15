@@ -1,10 +1,10 @@
 import { LeftCircleOutlined, QuestionCircleOutlined, ReloadOutlined } from "@ant-design/icons";
-import { Button, Slider, message } from "antd";
+import { Button, Modal, Slider, message } from "antd";
 import dayjs from "dayjs";
 import { type GetServerSideProps, type InferGetServerSidePropsType } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 // @ts-expect-error no types exists
 import { SvgLoader, SvgProxy } from "react-svgmt";
 import { ZodError } from "zod";
@@ -70,6 +70,9 @@ export default function TrainPage({
 
   const [timeRange, setTimeRange] = useState<number[]>(initialRange ?? [0, 0]);
   const [LModalOpen, setLModalOpen] = useState<boolean>(false);
+  const [missingModalOpen, setMissingModalOpen] = useState<boolean>(false);
+  // some weird antd modal hydration issues
+  useEffect(() => setMissingModalOpen(true), []);
 
   const [selectedSeat, setSelectedSeat] = useState<number[] | null>(initialSelectedSeat ?? null);
 
@@ -78,9 +81,13 @@ export default function TrainPage({
   useEffect(() => {
     // @ts-expect-error no types for globally available plausible function
     // eslint-disable-next-line
-    if (window.plausible) window.plausible("pageview", {
-      u: (window.location.origin + window.location.pathname).split("/").filter((_,i) => i != 4).join("/")
-    });
+    if (window.plausible)
+      window.plausible("pageview", {
+        u: (window.location.origin + window.location.pathname)
+          .split("/")
+          .filter((_, i) => i != 4)
+          .join("/"),
+      });
   }, []);
 
   useEffect(() => {
@@ -118,6 +125,25 @@ export default function TrainPage({
       );
     }
   }, [router, train, stations, initialRange, initialSelectedSeat, timeRange, selectedSeat]);
+
+  const isInComplete = useMemo(
+    () =>
+      wagons
+        ? wagons.some((w) =>
+            w.floors.some((f) => f.seats.some((s) => s.status.some((ss) => ss === "missing")))
+          )
+        : false,
+    [wagons]
+  );
+  const missingRanges = useMemo(
+    () =>
+      wagons && stations
+        ? stations.map((_, i) =>
+            wagons.some((w) => w.floors.some((f) => f.seats.some((s) => s.status[i] === "missing")))
+          )
+        : [],
+    [wagons, stations]
+  );
 
   useEffect(() => {
     if (!initialSelectedSeat || !mainMapRef) return;
@@ -214,10 +240,13 @@ export default function TrainPage({
 
       const color = seat
         ? {
+            missing: "#45475a",
             unavailable: "#9399b2",
             reserved: "#f38ba8",
             open: "#a6e3a1",
           }[seat.status[i + timeRange[0]!]!]
+        : isInComplete && missingRanges.slice(timeRange[0], timeRange[1])[i]
+        ? "#45475a"
         : "#7f849c";
 
       if (i === 0) leftHandle.style.setProperty("--handle-color", color);
@@ -235,7 +264,7 @@ export default function TrainPage({
 
     const sliderEl = document.getElementsByClassName("ant-slider-track-1")[0] as HTMLElement;
     if (sliderEl) sliderEl.style.background = styleStr;
-  }, [timeRange, selectedSeat, wagons]);
+  }, [timeRange, selectedSeat, wagons, isInComplete, missingRanges]);
 
   useEffect(() => {
     router.prefetch(date ? `/?date=${date}` : "/").catch(console.error);
@@ -384,7 +413,7 @@ export default function TrainPage({
   const bookedEcoSeats = ecoSeatObjs.filter((s) => s.status.includes("reserved")).length;
   const percentageBookedEcoSeats =
     ecoSeatObjs.reduce((a, c) => a + c.status.filter((s) => s === "reserved").length, 0) /
-    ecoSeatObjs.reduce((a, c) => a + c.status.length, 0);
+    ecoSeatObjs.reduce((a, c) => a + c.status.filter((s) => s !== "missing").length, 0);
 
   const siteTitle = `VenaaRauhassa - ${train.trainType}${train.trainNumber} - ${fiDate}`;
   const description =
@@ -432,6 +461,21 @@ export default function TrainPage({
       </Head>
 
       {messageContextHolder}
+
+      {isInComplete ? (
+        <Modal
+          title="Osasta matkaa ei voitu hakea tietoja"
+          open={missingModalOpen}
+          onOk={() => setMissingModalOpen(false)}
+          onCancel={() => setMissingModalOpen(false)}
+          footer={null}
+        >
+          <p>
+            Osa ominaisuuksista on poistettu käytöstä ja tiedot eivät välttämättä pidä paikkaansa.
+            Näet aikajanalla tumman harmaalla kohdat, joista tietoja ei ole saatavilla.
+          </p>
+        </Modal>
+      ) : null}
 
       <div style={{ display: "flex", flexDirection: "column" }}>
         <div style={{ flex: 1 }}>
@@ -638,9 +682,15 @@ export default function TrainPage({
                           ? seat.number === selectedSeat[1] && wagon.number === selectedSeat[0]
                           : false;
 
-                        const allUnavailable = statusRange.every((r) => r === "unavailable");
-                        const allReserved = statusRange.every((r) => r === "reserved");
-                        const allOpen = statusRange.every((r) => r === "open");
+                        const allUnavailable = statusRange
+                          .filter((r) => r !== "missing")
+                          .every((r) => r === "unavailable");
+                        const allReserved = statusRange
+                          .filter((r) => r !== "missing")
+                          .every((r) => r === "reserved");
+                        const allOpen = statusRange
+                          .filter((r) => r !== "missing")
+                          .every((r) => r === "open");
 
                         const extra = seat.productType === "EXTRA_CLASS_SEAT";
                         const restaurant = seat.productType === "SEAT_UPSTAIRS_RESTAURANT_WAGON";
@@ -675,7 +725,7 @@ export default function TrainPage({
                                   20 *
                                     (8 / 2 -
                                       (statusRange.filter((r) => r === "reserved").length /
-                                        statusRange.length) *
+                                        statusRange.filter((r) => r !== "missing").length) *
                                         8)
                                 );
                               return "#f9e2af";
@@ -743,165 +793,168 @@ export default function TrainPage({
             mainMapRef={mainMapRef}
           />
 
-          <div
-            style={{
-              textAlign: "center",
-              width: "100%",
-            }}
-          >
-            <Button
-              onClick={() => {
-                // @ts-expect-error no types for globally available plausible function
-                // eslint-disable-next-line
-                if (window.plausible) window.plausible("Find Seat");
-
-                function getSeatGroup(floor: Floor, seat: Seat): Seat[] {
-                  if (seat.services.includes("OPPOSITE")) {
-                    const seatsInSection = floor.seats.filter(
-                      (s) => s.section === seat.section && s.number !== seat.number
-                    );
-                    return seatsInSection;
-                  } else {
-                    const adjacentNumber = seat.number % 2 ? seat.number + 1 : seat.number - 1;
-                    const adjacent = floor.seats.find((s) => s.number === adjacentNumber);
-                    if (adjacent) return [adjacent];
-                    return [];
-                  }
-                }
-
-                function groupScore(group: Seat[]) {
-                  if (!group.length) return 1;
-                  // TODO: should probably use time occupied instead of just stations
-                  return (
-                    group.reduce(
-                      (a, c) =>
-                        a +
-                        c.status.slice(timeRange[0], timeRange[1]).filter((s) => s === "open")
-                          .length /
-                          c.status.length,
-                      0
-                    ) / group.length
-                  );
-                }
-
-                const possibleSeats = wagons.flatMap((w) =>
-                  w.floors.flatMap((f) =>
-                    f.seats
-                      .filter(
-                        (s) =>
-                          s.productType === "ECO_CLASS_SEAT" &&
-                          s.type === "SEAT" &&
-                          ["WHEELCHAIR", "COMPARTMENT", "PETS", "PET-COACH"].every(
-                            (tSrv) => !s.services.some((srv) => srv.includes(tSrv))
-                          ) &&
-                          s.status.slice(timeRange[0], timeRange[1]).every((r) => r === "open")
-                      )
-                      .map((s) => {
-                        const group = getSeatGroup(f, s);
-                        return { ...s, wagon: w.number, group, groupScore: groupScore(group) };
-                      })
-                  )
-                );
-
-                if (!possibleSeats.length) {
-                  messageApi
-                    .open({
-                      type: "error",
-                      content: "Ei avoimia paikkoja junassa :(",
-                    })
-                    .then(
-                      () => null,
-                      () => null
-                    );
-                  return;
-                }
-
-                const posToNum = (pos: string | null) => (pos === "WINDOW" ? 1 : 0);
-
-                // TODO: this sorting and filtering is very primitive and the logic should be fine tuned to be more human-like
-
-                possibleSeats.sort((s1, s2) => {
-                  if (s1.group.length - s2.group.length) return s1.group.length - s2.group.length;
-                  if (s2.groupScore - s1.groupScore) return s2.groupScore - s1.groupScore;
-                  if (posToNum(s2.position) - posToNum(s1.position))
-                    return posToNum(s2.position) - posToNum(s1.position);
-                  return 0;
-                });
-
-                let criteria = 0;
-                let best = possibleSeats;
-
-                criteria = best[0]!.group.length;
-                best = best.filter((s) => s.group.length === criteria);
-
-                if (process.env.NODE_ENV === "development")
-                  console.log("group length", criteria, best);
-
-                criteria = best[0]!.groupScore;
-                best = best.filter((s) => s.groupScore >= criteria - 0.0001);
-
-                if (process.env.NODE_ENV === "development")
-                  console.log("group score", criteria, best);
-
-                criteria = posToNum(best[0]!.position);
-                best = best.filter((s) => posToNum(s.position) === criteria);
-
-                if (process.env.NODE_ENV === "development") console.log("position", criteria, best);
-
-                if (selectedSeat)
-                  best = best.filter(
-                    (s) => s.wagon !== selectedSeat[0] || s.number !== selectedSeat[1]
-                  );
-
-                if (!best.length) {
-                  messageApi
-                    .open({
-                      type: "info",
-                      content: "Ei muita yhtä hyviä vaihtoehtoja",
-                    })
-                    .then(
-                      () => null,
-                      () => null
-                    );
-                  return;
-                }
-
-                const randomSeat = best[Math.floor(Math.random() * best.length)]!;
-                if (process.env.NODE_ENV === "development") console.log(randomSeat);
-
-                changeSeatSelection(randomSeat.wagon, randomSeat.number, true);
-
-                messageApi
-                  .open({
-                    type: "success",
-                    content: `Vaunu ${randomSeat.wagon} paikka ${randomSeat.number}`,
-                  })
-                  .then(
-                    () => null,
-                    () => null
-                  );
-              }}
+          {isInComplete ? null : (
+            <div
               style={{
-                fontWeight: "bold",
-                height: "40px",
-                fontSize: "16px",
-                marginTop: "10px",
+                textAlign: "center",
+                width: "100%",
               }}
             >
-              ✨ Löydä paikkasi ✨{" "}
-              <span
+              <Button
+                onClick={() => {
+                  // @ts-expect-error no types for globally available plausible function
+                  // eslint-disable-next-line
+                  if (window.plausible) window.plausible("Find Seat");
+
+                  function getSeatGroup(floor: Floor, seat: Seat): Seat[] {
+                    if (seat.services.includes("OPPOSITE")) {
+                      const seatsInSection = floor.seats.filter(
+                        (s) => s.section === seat.section && s.number !== seat.number
+                      );
+                      return seatsInSection;
+                    } else {
+                      const adjacentNumber = seat.number % 2 ? seat.number + 1 : seat.number - 1;
+                      const adjacent = floor.seats.find((s) => s.number === adjacentNumber);
+                      if (adjacent) return [adjacent];
+                      return [];
+                    }
+                  }
+
+                  function groupScore(group: Seat[]) {
+                    if (!group.length) return 1;
+                    // TODO: should probably use time occupied instead of just stations
+                    return (
+                      group.reduce(
+                        (a, c) =>
+                          a +
+                          c.status.slice(timeRange[0], timeRange[1]).filter((s) => s === "open")
+                            .length /
+                            c.status.length,
+                        0
+                      ) / group.length
+                    );
+                  }
+
+                  const possibleSeats = wagons.flatMap((w) =>
+                    w.floors.flatMap((f) =>
+                      f.seats
+                        .filter(
+                          (s) =>
+                            s.productType === "ECO_CLASS_SEAT" &&
+                            s.type === "SEAT" &&
+                            ["WHEELCHAIR", "COMPARTMENT", "PETS", "PET-COACH"].every(
+                              (tSrv) => !s.services.some((srv) => srv.includes(tSrv))
+                            ) &&
+                            s.status.slice(timeRange[0], timeRange[1]).every((r) => r === "open")
+                        )
+                        .map((s) => {
+                          const group = getSeatGroup(f, s);
+                          return { ...s, wagon: w.number, group, groupScore: groupScore(group) };
+                        })
+                    )
+                  );
+
+                  if (!possibleSeats.length) {
+                    messageApi
+                      .open({
+                        type: "error",
+                        content: "Ei avoimia paikkoja junassa :(",
+                      })
+                      .then(
+                        () => null,
+                        () => null
+                      );
+                    return;
+                  }
+
+                  const posToNum = (pos: string | null) => (pos === "WINDOW" ? 1 : 0);
+
+                  // TODO: this sorting and filtering is very primitive and the logic should be fine tuned to be more human-like
+
+                  possibleSeats.sort((s1, s2) => {
+                    if (s1.group.length - s2.group.length) return s1.group.length - s2.group.length;
+                    if (s2.groupScore - s1.groupScore) return s2.groupScore - s1.groupScore;
+                    if (posToNum(s2.position) - posToNum(s1.position))
+                      return posToNum(s2.position) - posToNum(s1.position);
+                    return 0;
+                  });
+
+                  let criteria = 0;
+                  let best = possibleSeats;
+
+                  criteria = best[0]!.group.length;
+                  best = best.filter((s) => s.group.length === criteria);
+
+                  if (process.env.NODE_ENV === "development")
+                    console.log("group length", criteria, best);
+
+                  criteria = best[0]!.groupScore;
+                  best = best.filter((s) => s.groupScore >= criteria - 0.0001);
+
+                  if (process.env.NODE_ENV === "development")
+                    console.log("group score", criteria, best);
+
+                  criteria = posToNum(best[0]!.position);
+                  best = best.filter((s) => posToNum(s.position) === criteria);
+
+                  if (process.env.NODE_ENV === "development")
+                    console.log("position", criteria, best);
+
+                  if (selectedSeat)
+                    best = best.filter(
+                      (s) => s.wagon !== selectedSeat[0] || s.number !== selectedSeat[1]
+                    );
+
+                  if (!best.length) {
+                    messageApi
+                      .open({
+                        type: "info",
+                        content: "Ei muita yhtä hyviä vaihtoehtoja",
+                      })
+                      .then(
+                        () => null,
+                        () => null
+                      );
+                    return;
+                  }
+
+                  const randomSeat = best[Math.floor(Math.random() * best.length)]!;
+                  if (process.env.NODE_ENV === "development") console.log(randomSeat);
+
+                  changeSeatSelection(randomSeat.wagon, randomSeat.number, true);
+
+                  messageApi
+                    .open({
+                      type: "success",
+                      content: `Vaunu ${randomSeat.wagon} paikka ${randomSeat.number}`,
+                    })
+                    .then(
+                      () => null,
+                      () => null
+                    );
+                }}
                 style={{
-                  backgroundColor: "rgba(0, 0, 200, 0.2)",
-                  borderRadius: "10px",
-                  padding: "1px 7px",
-                  marginLeft: "5px",
-                  boxSizing: "border-box",
+                  fontWeight: "bold",
+                  height: "40px",
+                  fontSize: "16px",
+                  marginTop: "10px",
                 }}
               >
-                Beta
-              </span>
-            </Button>
-          </div>
+                ✨ Löydä paikkasi ✨{" "}
+                <span
+                  style={{
+                    backgroundColor: "rgba(0, 0, 200, 0.2)",
+                    borderRadius: "10px",
+                    padding: "1px 7px",
+                    marginLeft: "5px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  Beta
+                </span>
+              </Button>
+            </div>
+          )}
         </div>
 
         <div
@@ -1035,9 +1088,10 @@ export const getServerSideProps = (async (context) => {
         station: allStations[station.stationShortCode] ?? station.stationShortCode,
       }));
 
-    const rawWagons: (typeof train)["timeTableRows"][number]["wagons"][string][] = [];
+    const rawWagons: NonNullable<(typeof train)["timeTableRows"][number]["wagons"]>[string][] = [];
 
     for (const timeTableRow of train.timeTableRows) {
+      if (!timeTableRow.wagons) continue;
       for (const wagon of Object.values(timeTableRow.wagons)) {
         if (!rawWagons.some((w) => w.number === wagon.number)) {
           rawWagons.push(wagon);
@@ -1066,6 +1120,8 @@ export const getServerSideProps = (async (context) => {
                 number: place.number,
                 section: place.logicalSection,
                 status: train.timeTableRows.map((row) => {
+                  // VR API IS VERY STUPID AND SOMETIMES IS JUST MISSING ENTIRE JOURNEY LEGS
+                  if (!row.wagons) return "missing";
                   const rowWagon = Object.values(row.wagons).find(
                     (wagon2) => wagon2.number === wagon.number
                   );
@@ -1137,9 +1193,11 @@ export const getServerSideProps = (async (context) => {
       {
         date: context.params.date,
         train: context.params.train,
-        ...(e instanceof Error ? {
-          message: e.message
-        } : {}),
+        ...(e instanceof Error
+          ? {
+              message: e.message,
+            }
+          : {}),
         url: "<" + getBaseURL() + context.resolvedUrl + ">",
       },
       e
@@ -1195,7 +1253,7 @@ export type Floor = {
 export type Seat = {
   number: number;
   section: number;
-  status: ("open" | "reserved" | "unavailable")[];
+  status: ("open" | "reserved" | "unavailable" | "missing")[];
   productType: string;
   type: string;
   services: string[];

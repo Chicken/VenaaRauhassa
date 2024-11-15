@@ -63,9 +63,12 @@ export const LegendModal = ({
           Voit klikata paikkaa nähdäksesi sen varauksen asemalta toiselle. Voit myös rajata
           asemaväliä liikuttamalla liukusäätimen päätepisteitä.
         </p>
-        <LegendItem bgColor={"#45475a"} text={"Paikka ei saatavilla"} />
-        <LegendItem bgColor={"#9399b2"} text={"Paikan vaunu ei kulje määränpäähän saakka"} />
-        <LegendItem bgColor={"#f38ba8"} text={"Paikka varattu valitulle matkalle"} />
+
+        <LegendItem
+          borderColor={"#820909"}
+          text={"Erikoispaikka (ekstra, ravintolavaunu, hytti, eläin)"}
+        />
+        <LegendItem bgColor={"#a6e3a1"} text={"Paikka vapaa"} />
         {heatmapEnabled ? (
           <LegendItem
             bgGradient
@@ -75,11 +78,11 @@ export const LegendModal = ({
         ) : (
           <LegendItem bgColor={"#f9e2af"} text={"Paikka osittain varattu valitulle matkalle"} />
         )}
-        <LegendItem bgColor={"#a6e3a1"} text={"Paikka vapaa"} />
-        <LegendItem
-          borderColor={"#820909"}
-          text={"Erikoispaikka (ekstra, ravintolavaunu, hytti, eläin)"}
-        />
+
+        <LegendItem bgColor={"#f38ba8"} text={"Paikka varattu valitulle matkalle"} />
+        <LegendItem bgColor={"#9399b2"} text={"Paikan vaunu ei kulje määränpäähän saakka"} />
+        <LegendItem bgColor={"#45475a"} text={"Välin haussa tapahtui ongelmia (aikajana)"} />
+        <LegendItem bgColor={"#45475a"} text={"Paikka ei saatavilla (kartta)"} />
         <p>
           Vaihda keltaisesta väliväristä edistyneempään lämpökarttaan:&nbsp;
           <Switch
