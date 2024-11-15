@@ -46,6 +46,12 @@ export default function Home({
   const [fbForm] = Form.useForm();
   const [isFbModalOpen, setIsFbModalOpen] = useState<boolean>(false);
 
+  useEffect(() => {
+    // @ts-expect-error no types for globally available plausible function
+    // eslint-disable-next-line
+    if (window.plausible) window.plausible("pageview");
+  }, []);
+
   const getTrains = useCallback(async (date: string) => {
     setTrainsLoaded(false);
 

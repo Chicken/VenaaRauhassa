@@ -7,11 +7,19 @@ const AppDocument = () => (
   <Html lang="en">
     <Head>
       {env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT && env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? (
-        <script
-          defer
-          data-domain={env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
-          src={env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT}
-        ></script>
+        <>
+          <script
+            defer
+            data-domain={env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
+            src={env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT}
+          ></script>
+          <script
+            dangerouslySetInnerHTML={{
+              __html:
+                "window.plausible = window.plausible || function() {(window.plausible.q = window.plausible.q || []).push(arguments)}",
+            }}
+          ></script>
+        </>
       ) : (
         <></>
       )}

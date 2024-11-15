@@ -76,6 +76,14 @@ export default function TrainPage({
   const [heatmapEnabled, setHeatmapEnabled] = useStickyState("heatmapEnabled", true);
 
   useEffect(() => {
+    // @ts-expect-error no types for globally available plausible function
+    // eslint-disable-next-line
+    if (window.plausible) window.plausible("pageview", {
+      u: (window.location.origin + window.location.pathname).split("/").filter((_,i) => i != 4).join("/")
+    });
+  }, []);
+
+  useEffect(() => {
     if (!train) return;
     function safeShallow(url: string) {
       if (decodeURIComponent(router.asPath) !== url)
