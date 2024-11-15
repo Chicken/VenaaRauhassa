@@ -80,14 +80,16 @@ export default function TrainPage({
 
   useEffect(() => {
     // @ts-expect-error no types for globally available plausible function
-    // eslint-disable-next-line
-    if (window.plausible)
+    if (window.plausible) {
+      // @ts-expect-error no types for globally available plausible function
+      // eslint-disable-next-line
       window.plausible("pageview", {
         u: (window.location.origin + window.location.pathname)
           .split("/")
           .filter((_, i) => i != 4)
           .join("/"),
       });
+    }
   }, []);
 
   useEffect(() => {
