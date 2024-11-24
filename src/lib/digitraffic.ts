@@ -69,7 +69,7 @@ export async function getInitialTrains(date: string) {
       return {
         value: t.trainNumber.toString(),
         label: `${t.trainType}${t.trainNumber} (${departure.stationShortCode} ${departureTime} -> ${arrival.stationShortCode} ${arrivalTime})`,
-        title: `${t.trainType}${t.trainNumber} (${longDepartureStationName} ${departureTime} -> ${longArrivalStationName} ${arrivalTime})`,
+        //title: `${t.trainType}${t.trainNumber} (${longDepartureStationName} ${departureTime} -> ${longArrivalStationName} ${arrivalTime})`,
         departureStationShortCode: departure.stationShortCode,
         arrivalStationShortCode: arrival.stationShortCode,
         departureStationName: stations[departure.stationShortCode] ?? departure.stationShortCode,
