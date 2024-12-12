@@ -14,7 +14,8 @@ import { hueShift } from "~/lib/colors";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import { error } from "~/lib/logger";
-import { getStations, getTrainOnDate } from "~/lib/vr";
+import { getTrainOnDate } from "~/lib/vr";
+import { getStations } from "~/lib/digitraffic";
 import { LegendModal } from "../../../components/LegendModal";
 
 function getSeatId(event: MouseEvent) {
@@ -887,20 +888,11 @@ export default function TrainPage({
                   criteria = best[0]!.group.length;
                   best = best.filter((s) => s.group.length === criteria);
 
-                  if (process.env.NODE_ENV === "development")
-                    console.log("group length", criteria, best);
-
                   criteria = best[0]!.groupScore;
                   best = best.filter((s) => s.groupScore >= criteria - 0.0001);
 
-                  if (process.env.NODE_ENV === "development")
-                    console.log("group score", criteria, best);
-
                   criteria = posToNum(best[0]!.position);
                   best = best.filter((s) => posToNum(s.position) === criteria);
-
-                  if (process.env.NODE_ENV === "development")
-                    console.log("position", criteria, best);
 
                   if (selectedSeat)
                     best = best.filter(
@@ -921,7 +913,6 @@ export default function TrainPage({
                   }
 
                   const randomSeat = best[Math.floor(Math.random() * best.length)]!;
-                  if (process.env.NODE_ENV === "development") console.log(randomSeat);
 
                   changeSeatSelection(randomSeat.wagon, randomSeat.number, true);
 

@@ -1,5 +1,5 @@
 FROM --platform=$BUILDPLATFORM node:20-alpine AS base_build
-FROM --platform=$TARGETPLATFORM node:20-alpine AS base_target
+FROM node:20-alpine AS base_target
 
 
 
@@ -26,7 +26,7 @@ RUN yarn build
 FROM base_target AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 COPY --from=builder --chown=node:node /app .
 

@@ -1,51 +1,162 @@
-import { Redis } from "@upstash/redis";
 import crypto from "crypto";
+import { JSDOM as JSDom } from "jsdom";
 import { z } from "zod";
 import { env } from "~/lib/env";
 import { getJSON, postJSON } from "~/lib/http";
 import { error } from "~/lib/logger";
-import { formatShortFinnishTime } from "./dateUtilities";
+// TODO: refactor to use bent, axios cookiejar was just the easiest way to get this working for now
+import axios from "axios";
+import { wrapper } from "axios-cookiejar-support";
+import { CookieJar } from "tough-cookie";
+import { sessionStore } from "~/lib/sessionStore";
 
-const loginResponseSchema = z.object({
-  identityToken: z.string(),
+function createRandomString() {
+  const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.";
+  return Array.from(crypto.getRandomValues(new Uint8Array(43)))
+    .map((v) => charset[v % charset.length])
+    .join("");
+}
+
+const tokenSchema = z.object({
+  bffToken: z.string(),
   expiresOn: z.string(),
-  refreshToken: z.string(),
-  refreshTokenExpiresOn: z.string(),
+});
+
+const auth0ConfigSchema = z.object({
+  extraParams: z.object({
+    state: z.string(),
+  }),
 });
 
 async function vrLogin(username: string, password: string) {
-  const sessionId = crypto.randomUUID();
-  const session = await postJSON(
-    `${env.VR_API_URL}/auth/login`,
-    {
-      username,
-      password,
-    },
-    {
-      "x-vr-requestid": crypto.randomUUID(),
-      "x-vr-sessionid": sessionId,
-      "aste-apikey": env.VR_API_KEY,
-    }
+  console.log("Logging in on a new session...");
+  const jar = new CookieJar();
+  const client = wrapper(axios.create({ jar }));
+  const codeVerifier = createRandomString();
+  const codeChallenge = crypto.createHash("sha256").update(codeVerifier).digest("base64");
+
+  const initLoginUrl = new URL(
+    `${env.VR_ID_API}/vrgroup/uaa/v1/api/login?${new URLSearchParams({
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+      locale: "en",
+      channel_id: env.VR_ID_CHANNEL_ID,
+      redirect_uri: new URL(
+        `${env.VR_API_URL}/ciam/callback?${new URLSearchParams({
+          redirect_uri: new URL(
+            `${env.VR_API_SECONDARY_URL}/?${new URLSearchParams({
+              ibi: "fi.vr.mobile.app",
+              apn: "fi.vr.mobile.app",
+              ius: "matkallaprod",
+              isi: "1410647394",
+              ofl: "https://www.vr.fi/",
+              link: new URL(
+                `${env.VR_API_SECONDARY_URL}/ciam-auth?${new URLSearchParams({
+                  challenge: codeChallenge,
+                  action: "login",
+                }).toString()}`
+              ).toString(),
+            }).toString()}`
+          ).toString(),
+        }).toString()}`
+      ).toString(),
+    }).toString()}`
+  ).toString();
+
+  const loginInitRes = await client.get(initLoginUrl);
+  if (loginInitRes.status !== 200) throw new Error("Failed to get login init");
+  if (typeof loginInitRes.data !== "string") throw new Error("Login init response was not text");
+  const auth0Config = auth0ConfigSchema.parse(
+    JSON.parse(
+      Buffer.from(loginInitRes.data.split(' = "')[1]?.split('"')[0] ?? "", "base64").toString(
+        "utf-8"
+      )
+    )
   );
 
+  const loginRes = await client.post(`${env.VR_ID_API}/usernamepassword/login`, {
+    client_id: env.VR_CLIENT_ID,
+    tenant: env.VR_ID_TENANT,
+    reponse_type: "token",
+    connection: env.VR_ID_CONNECTION,
+    state: auth0Config.extraParams.state,
+    username,
+    password,
+  });
+  if (typeof loginRes.data !== "string") throw new Error("Login init response was not text");
+  const { document: loginDataDom } = new JSDom(loginRes.data).window;
+
+  const nullableCallbackData = {
+    wa: loginDataDom.querySelector("input[name='wa']")?.getAttribute("value"),
+    wresult: loginDataDom.querySelector("input[name='wresult']")?.getAttribute("value"),
+    wctx: loginDataDom.querySelector("input[name='wctx']")?.getAttribute("value"),
+  };
+
+  if (!nullableCallbackData.wa || !nullableCallbackData.wresult || !nullableCallbackData.wctx)
+    throw new Error("Failed to parse login form data");
+
+  const callbackData = nullableCallbackData as { [K in keyof typeof nullableCallbackData]: string };
+
+  const callbackUrl = `${env.VR_ID_API}/login/callback`;
+  const callbackRes = await client.post(callbackUrl, new URLSearchParams(callbackData).toString(), {
+    maxRedirects: 0,
+    validateStatus: (status) => status === 302,
+  });
+  if (typeof callbackRes.headers.location !== "string")
+    throw new Error("Failed to get callback url");
+
+  let previousUrl = callbackUrl;
+  let currentUrl = callbackRes.headers.location;
+  while (!currentUrl.startsWith("intent://")) {
+    currentUrl = new URL(currentUrl, previousUrl).toString();
+    const redirectRes = await client.get(currentUrl, {
+      maxRedirects: 0,
+      validateStatus: (status) => [302, 307].includes(status),
+      headers: {
+        "User-Agent": env.VR_MOBILE_USER_AGENT,
+      },
+    });
+    previousUrl = currentUrl;
+    if (typeof redirectRes.headers.location !== "string")
+      throw new Error("Failed to get redirect url");
+    currentUrl = redirectRes.headers.location;
+  }
+  const intentUrl = new URL(currentUrl);
+  const intentLink = intentUrl.searchParams.get("link");
+  if (!intentLink) throw new Error("Failed to get intent link from intent url");
+  const intentLinkUrl = new URL(intentLink);
+  const sessionKey = intentLinkUrl.searchParams.get("session_key");
+
+  const sessionId = crypto.randomUUID();
+
+  const tokenRes = await client.post(
+    `${env.VR_API_URL}/ciam/tokens`,
+    {
+      sessionKey,
+      verifier: codeVerifier,
+    },
+    {
+      headers: {
+        "x-vr-requestid": crypto.randomUUID(),
+        "x-vr-sessionid": sessionId,
+        "aste-apikey": env.VR_API_KEY,
+      },
+    }
+  );
+  if (typeof tokenRes.data !== "object") throw new Error("Token response was not json");
+
   return {
-    ...loginResponseSchema.parse(session),
+    ...tokenSchema.parse(tokenRes.data),
     sessionId: sessionId,
   };
 }
 
-const resfreshResponseSchema = z.object({
-  accessToken: z.string(),
-  expiresOn: z.string(),
-  refreshToken: z.string(),
-  refreshTokenExpiresOn: z.string(),
-});
-
-async function vrRefreshToken(token: string, refreshToken: string, sessionId: string) {
+async function vrRefreshToken(token: string, sessionId: string) {
+  console.log("Refreshing token...");
   const session = await postJSON(
     `${env.VR_API_URL}/auth/token`,
     {
-      refreshToken,
+      /** empty json body */
     },
     {
       "x-vr-requestid": crypto.randomUUID(),
@@ -55,74 +166,46 @@ async function vrRefreshToken(token: string, refreshToken: string, sessionId: st
     }
   );
 
-  return resfreshResponseSchema.parse(session);
+  return tokenSchema.parse(session);
 }
 
-const storedSessionSchema = z.object({
-  sessionId: z.string(),
-  token: z.string(),
-  refreshToken: z.string(),
-  expiresOn: z.string(),
-});
-
-type StoredSession = z.infer<typeof storedSessionSchema>;
-
-async function getVrAuth(retry = false): Promise<{ sessionId: string; token: string }> {
-  const redis = new Redis({
-    url: env.UPSTASH_URL,
-    token: env.UPSTASH_TOKEN,
-  });
-
-  const rawSession = await redis.hgetall("session");
-  const parsedSession = storedSessionSchema.safeParse(rawSession);
-  if (
-    !rawSession ||
-    !parsedSession.success ||
-    (retry &&
-      parsedSession.success &&
-      new Date(parsedSession.data.expiresOn).getTime() < Date.now())
-  ) {
+async function getVrAuth(retry = 0): Promise<{ sessionId: string; token: string }> {
+  const currentSession = sessionStore.get();
+  if (!currentSession || retry >= 2) {
     const newSession = await vrLogin(env.VR_USER, env.VR_PASS);
-    await redis.hset("session", {
+    sessionStore.set({
       sessionId: newSession.sessionId,
-      token: newSession.identityToken,
-      refreshToken: newSession.refreshToken,
-      expiresOn: newSession.expiresOn,
-    } satisfies StoredSession);
+      token: newSession.bffToken,
+      expiresOn: new Date(newSession.expiresOn).getTime(),
+    });
     return {
       sessionId: newSession.sessionId,
-      token: newSession.identityToken,
+      token: newSession.bffToken,
     };
   }
-  const session = parsedSession.data;
-  if (new Date(session.expiresOn).getTime() < Date.now()) {
+  if (currentSession.expiresOn < Date.now()) {
     try {
-      const newSession = await vrRefreshToken(
-        session.token,
-        session.refreshToken,
-        session.sessionId
-      );
-      await redis.hset("session", {
-        sessionId: session.sessionId,
-        token: newSession.accessToken,
-        refreshToken: newSession.refreshToken,
-        expiresOn: newSession.expiresOn,
-      } satisfies StoredSession);
+      const newSession = await vrRefreshToken(currentSession.token, currentSession.sessionId);
+      sessionStore.set({
+        sessionId: currentSession.sessionId,
+        token: newSession.bffToken,
+        expiresOn: new Date(newSession.expiresOn).getTime(),
+      });
       return {
-        sessionId: session.sessionId,
-        token: newSession.accessToken,
+        sessionId: currentSession.sessionId,
+        token: newSession.bffToken,
       };
     } catch (e) {
       console.error("refreshing session failed", e);
       // just sleep a bit and try again
       await new Promise((res) => setTimeout(res, 50));
-      return getVrAuth(true);
+      return getVrAuth(retry + 1);
     }
   }
 
   return {
-    sessionId: session.sessionId,
-    token: session.token,
+    sessionId: currentSession.sessionId,
+    token: currentSession.token,
   };
 }
 
@@ -190,17 +273,12 @@ async function getWagonMapData(
       (e.statusCode === 401 || e.statusCode === 403)
     ) {
       try {
-        const redis = new Redis({
-          url: env.UPSTASH_URL,
-          token: env.UPSTASH_TOKEN,
-        });
         const newSession = await vrLogin(env.VR_USER, env.VR_PASS);
-        await redis.hset("session", {
+        sessionStore.set({
           sessionId: newSession.sessionId,
-          token: newSession.identityToken,
-          refreshToken: newSession.refreshToken,
-          expiresOn: newSession.expiresOn,
-        } satisfies StoredSession);
+          token: newSession.bffToken,
+          expiresOn: new Date(newSession.expiresOn).getTime(),
+        });
       } catch (_ignored) {}
     }
     throw e;
@@ -299,84 +377,4 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
   }
 
   return newTrain;
-}
-
-const stationResponseSchema = z.array(
-  z.object({
-    passengerTraffic: z.boolean(),
-    stationShortCode: z.string(),
-    stationName: z.string(),
-  })
-);
-
-export async function getStations() {
-  const res = await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations");
-
-  const data = stationResponseSchema.parse(res);
-
-  const filteredData = data.filter((s) => s.passengerTraffic);
-
-  const stations = Object.fromEntries(filteredData.map((s) => [s.stationShortCode, s.stationName]));
-
-  return stations;
-}
-
-const trainsResponseSchema = z.array(
-  z.object({
-    trainNumber: z.number(),
-    trainType: z.string(),
-    timeTableRows: z.array(
-      z.object({
-        stationShortCode: z.string(),
-        scheduledTime: z.string(),
-      })
-    ),
-  })
-);
-
-export async function getInitialTrains(date: string) {
-  const [initialTrainsUnchecked, stations] = await Promise.all([
-    getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`),
-    getStations(),
-  ]);
-
-  const initialTrains = trainsResponseSchema.parse(initialTrainsUnchecked);
-
-  return initialTrains
-    .filter((t) => ["IC", "S", "PYO"].includes(t.trainType))
-    .map((t) => {
-      const departure = t.timeTableRows[0];
-      const arrival = t.timeTableRows[t.timeTableRows.length - 1];
-
-      if (!departure || !arrival) {
-        return {
-          value: t.trainNumber.toString(),
-          label: `${t.trainType}${t.trainNumber}`,
-          departureStationShortCode: "",
-          arrivalStationShortCode: "",
-          departureStationName: "",
-          arrivalStationName: "",
-        };
-      }
-
-      const departureTime = formatShortFinnishTime(departure.scheduledTime);
-      const arrivalTime = formatShortFinnishTime(arrival.scheduledTime);
-
-      const longDepartureStationName =
-        stations[departure.stationShortCode]?.replace(" asema", "").trim() ??
-        departure.stationShortCode;
-      const longArrivalStationName =
-        stations[arrival.stationShortCode]?.replace(" asema", "").trim() ??
-        arrival.stationShortCode;
-
-      return {
-        value: t.trainNumber.toString(),
-        label: `${t.trainType}${t.trainNumber} (${departure.stationShortCode} ${departureTime} -> ${arrival.stationShortCode} ${arrivalTime})`,
-        title: `${t.trainType}${t.trainNumber} (${longDepartureStationName} ${departureTime} -> ${longArrivalStationName} ${arrivalTime})`,
-        departureStationShortCode: departure.stationShortCode,
-        arrivalStationShortCode: arrival.stationShortCode,
-        departureStationName: stations[departure.stationShortCode] ?? departure.stationShortCode,
-        arrivalStationName: stations[arrival.stationShortCode] ?? arrival.stationShortCode,
-      };
-    });
 }

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
-import { getInitialTrains } from "~/lib/vr";
+import { getInitialTrains } from "~/lib/digitraffic";
 
 const pickerStyle: React.CSSProperties = {
   width: "100%",
@@ -154,7 +154,6 @@ export default function Home({
           style={{ marginTop: "2em" }}
           onFinish={(values) => {
             void (async () => {
-              console.log(values);
               setIsFbModalOpen(false);
               fbForm.resetFields();
               messageApi
