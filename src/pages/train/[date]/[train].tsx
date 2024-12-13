@@ -612,7 +612,7 @@ export default function TrainPage({
             }}
           >
             {wagons.map((wagon) => {
-              if (wagon.placeType === "VEHICLE") {
+              if (wagon.placeType === "VEHICLE" || ["EIL", "EILF"].includes(wagon.type)) {
                 return null;
                 // if we ever want to show vehicle wagons
                 // also the below serves as a great "empty" wagon for errors or loading skeletons if necessary in the future
@@ -792,7 +792,7 @@ export default function TrainPage({
           </div>
 
           <MiniMap
-            wagons={wagons.filter((wagon) => wagon.placeType !== "VEHICLE")}
+            wagons={wagons.filter((wagon) => wagon.placeType !== "VEHICLE" && !["EIL", "EILF"].includes(wagon.type))}
             mainMapRef={mainMapRef}
           />
 
