@@ -12,10 +12,10 @@ import { MiniMap } from "~/components/MiniMap";
 import { Easing, animate } from "~/lib/animate";
 import { hueShift } from "~/lib/colors";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
+import { getStations } from "~/lib/digitraffic";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import { error } from "~/lib/logger";
 import { getTrainOnDate } from "~/lib/vr";
-import { getStations } from "~/lib/digitraffic";
 import { LegendModal } from "../../../components/LegendModal";
 
 function getSeatId(event: MouseEvent) {
@@ -153,8 +153,8 @@ export default function TrainPage({
     let cancelAnimation: (() => void) | null = null;
     const timeout = setTimeout(() => {
       const seatEl = document.querySelector(
-        `[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}_shape`
-      );
+        `[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}`
+      ) ?? document.querySelector(`[data-wagon="${initialSelectedSeat[0]}"] #bed_${initialSelectedSeat[1]}`);
       if (!seatEl) return;
       const bounding = seatEl.getBoundingClientRect();
       const mapBounding = mainMapRef.getBoundingClientRect();
@@ -183,7 +183,9 @@ export default function TrainPage({
   const changeSeatSelection = useCallback(
     (wagon: number, seat: number, set: boolean) => {
       if (!mainMapRef) return;
-      const seatEl = document.querySelector(`[data-wagon="${wagon}"] #seat_${seat}_shape`);
+      const seatEl = document.querySelector(
+        `[data-wagon="${wagon}"] #seat_${seat}`
+      ) ?? document.querySelector(`[data-wagon="${wagon}"] #bed_${seat}`);
       if (!seatEl) return;
       const bounding = seatEl.getBoundingClientRect();
       const mapBounding = mainMapRef.getBoundingClientRect();
