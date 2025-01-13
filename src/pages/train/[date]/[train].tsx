@@ -243,7 +243,9 @@ export default function TrainPage({
           />
 
           <MiniMap
-            wagons={wagons.filter((wagon) => wagon.placeType !== "VEHICLE" && !["EIL", "EILF"].includes(wagon.type))}
+            wagons={wagons.filter(
+              (wagon) => wagon.placeType !== "VEHICLE" && !["EIL", "EILF"].includes(wagon.type)
+            )}
             mainMapRef={mainMapRef}
           />
 

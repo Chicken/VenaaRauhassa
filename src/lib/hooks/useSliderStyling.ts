@@ -50,8 +50,8 @@ export const useSliderStyling = (
             open: "#a6e3a1",
           }[seat.status[i + timeRange[0]!]!]
         : isInComplete && missingRanges.slice(timeRange[0], timeRange[1])[i]
-          ? "#45475a"
-          : "#7f849c";
+        ? "#45475a"
+        : "#7f849c";
 
       if (i === 0) leftHandle.style.setProperty("--handle-color", color);
       if (i === sliderDots.length - 2) rightHandle.style.setProperty("--handle-color", color);

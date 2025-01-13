@@ -9,9 +9,13 @@ export const useSeatScroll = (
     if (!initialSelectedSeat || !mainMapRef) return;
     let cancelAnimation: (() => void) | null = null;
     const timeout = setTimeout(() => {
-      const seatEl = document.querySelector(
-        `[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}`
-      ) ?? document.querySelector(`[data-wagon="${initialSelectedSeat[0]}"] #bed_${initialSelectedSeat[1]}`);
+      const seatEl =
+        document.querySelector(
+          `[data-wagon="${initialSelectedSeat[0]}"] #seat_${initialSelectedSeat[1]}`
+        ) ??
+        document.querySelector(
+          `[data-wagon="${initialSelectedSeat[0]}"] #bed_${initialSelectedSeat[1]}`
+        );
       if (!seatEl) return;
       const bounding = seatEl.getBoundingClientRect();
       const mapBounding = mainMapRef.getBoundingClientRect();

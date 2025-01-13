@@ -8,9 +8,9 @@ export const useSeatSelection = (
   const changeSeatSelection = useCallback(
     (wagon: number, seat: number, set: boolean) => {
       if (!mainMapRef) return;
-      const seatEl = document.querySelector(
-        `[data-wagon="${wagon}"] #seat_${seat}`
-      ) ?? document.querySelector(`[data-wagon="${wagon}"] #bed_${seat}`);
+      const seatEl =
+        document.querySelector(`[data-wagon="${wagon}"] #seat_${seat}`) ??
+        document.querySelector(`[data-wagon="${wagon}"] #bed_${seat}`);
       if (!seatEl) return;
       const bounding = seatEl.getBoundingClientRect();
       const mapBounding = mainMapRef.getBoundingClientRect();

@@ -13,8 +13,8 @@ export const processStations = (train: Train, allStations: Record<string, string
         i === stations.length - 1
           ? new Date(station.scheduledTime).getTime()
           : "arrivalTime" in station
-            ? new Date(station.arrivalTime).getTime()
-            : null,
+          ? new Date(station.arrivalTime).getTime()
+          : null,
       stationShortCode: station.stationShortCode,
       station: allStations[station.stationShortCode] ?? station.stationShortCode,
     }));
