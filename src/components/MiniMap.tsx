@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useMediaQuery } from "react-responsive";
 import { Easing, animate } from "~/lib/animate";
-import type { Wagon } from "~/pages/train/[date]/[train]";
+import type { Wagon } from "~/types";
 
 interface MiniMapProps {
   wagons: Wagon[];
