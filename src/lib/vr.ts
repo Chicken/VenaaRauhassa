@@ -353,28 +353,49 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
               wagons,
             };
           } catch (e) {
-            void error(
-              {
-                date,
-                train: trainNumber,
-                message: "Wagon map data fetching failed",
-              },
-              e
-            ).catch(console.error);
+            console.error(e);
+            if (dep.stationShortCode !== "PSL" && arr.stationShortCode !== "HKI") {
+              void error(
+                {
+                  date,
+                  train: trainNumber,
+                  message: "Wagon map data fetching failed",
+                },
+                e
+              ).catch(console.error);
+            }
             return {
               dep,
               arr,
               wagons: null,
+              error: e,
             };
           }
         })
     ),
   };
 
-  const nullWagons = newTrain.timeTableRows.reduce((a, tt) => a + (tt.wagons == null ? 1 : 0), 0);
-  if (nullWagons == newTrain.timeTableRows.length || nullWagons > 3) {
-    throw new Error("Too many null wagons!");
+  // TODO: figure out a real solution for this problem
+  if (
+    newTrain.timeTableRows.at(-1) != null &&
+    newTrain.timeTableRows.at(-2) != null &&
+    newTrain.timeTableRows.at(-1)!.wagons == null &&
+    newTrain.timeTableRows.at(-2)!.wagons != null &&
+    newTrain.timeTableRows.at(-1)!.dep.stationShortCode === "PSL" &&
+    newTrain.timeTableRows.at(-1)!.arr.stationShortCode === "HKI"
+  ) {
+    newTrain.timeTableRows.at(-1)!.wagons = newTrain.timeTableRows.at(-2)!.wagons;
   }
+
+  const nullWagons = newTrain.timeTableRows.filter((ttr) => ttr.wagons == null).length;
+  if (nullWagons === newTrain.timeTableRows.length || nullWagons >= 3) {
+    throw new AggregateError(
+      newTrain.timeTableRows.filter((ttr) => "error" in ttr).map((ttr) => ttr.error),
+      "Too many null wagons!"
+    );
+  }
+
+  for (const ttr of newTrain.timeTableRows) delete ttr.error;
 
   return newTrain;
 }
