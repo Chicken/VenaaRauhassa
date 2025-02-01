@@ -236,6 +236,7 @@ export default function TrainPage({
 
           <WagonMap
             wagons={wagons}
+            stations={stations}
             timeRange={timeRange}
             selectedSeat={selectedSeat}
             heatmapEnabled={heatmapEnabled}
