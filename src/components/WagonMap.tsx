@@ -156,10 +156,7 @@ export const WagonMap: React.FC<WagonMapProps> = ({
                         if (allReserved) return "#f38ba8";
                         if (allOpen) return "#a6e3a1";
                         if (heatmapEnabled)
-                          return hueShift(
-                            "#f9e2af",
-                            20 * (8 / 2 - (occupiedTime / totalTime) * 8)
-                          );
+                          return hueShift("#f9e2af", 20 * (8 / 2 - (occupiedTime / totalTime) * 8));
                         return "#f9e2af";
                       })()}
                       stroke={(() => {

@@ -9,6 +9,7 @@ import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import { sessionStore } from "~/lib/sessionStore";
+import { cache, MINUTE } from "~/lib/cacheFn";
 
 function createRandomString() {
   const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.";
@@ -301,7 +302,7 @@ const trainResponseSchema = z.array(
   })
 );
 
-export async function getTrainOnDate(date: string, trainNumber: string) {
+export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumber: string) => {
   const res = await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`);
 
   const data = trainResponseSchema.parse(res);
@@ -398,4 +399,4 @@ export async function getTrainOnDate(date: string, trainNumber: string) {
   for (const ttr of newTrain.timeTableRows) delete ttr.error;
 
   return newTrain;
-}
+});

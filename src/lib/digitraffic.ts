@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getJSON } from "~/lib/http";
 import { formatShortFinnishTime } from "./dateUtilities";
+import { cache, HOUR, MINUTE } from "~/lib/cacheFn";
 
 const stationResponseSchema = z.array(
   z.object({
@@ -10,13 +11,13 @@ const stationResponseSchema = z.array(
   })
 );
 
-export async function getStations() {
+export const getStations = cache(12 * HOUR, async () => {
   const res = await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations");
   const data = stationResponseSchema.parse(res);
   const filteredData = data.filter((s) => s.passengerTraffic);
   const stations = Object.fromEntries(filteredData.map((s) => [s.stationShortCode, s.stationName]));
   return stations;
-}
+});
 
 const trainsResponseSchema = z.array(
   z.object({
@@ -31,7 +32,7 @@ const trainsResponseSchema = z.array(
   })
 );
 
-export async function getInitialTrains(date: string) {
+export const getInitialTrains = cache(30 * MINUTE, async (date: string) => {
   const [initialTrainsUnchecked, stations] = await Promise.all([
     getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`),
     getStations(),
@@ -68,4 +69,4 @@ export async function getInitialTrains(date: string) {
         arrivalStationName: stations[arrival.stationShortCode] ?? arrival.stationShortCode,
       };
     });
-}
+});
