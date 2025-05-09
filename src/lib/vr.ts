@@ -10,6 +10,7 @@ import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import { sessionStore } from "~/lib/sessionStore";
 import { cache, MINUTE } from "~/lib/cacheFn";
+import { digitrafficUser } from "~/lib/digitraffic";
 
 function createRandomString() {
   const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.";
@@ -303,7 +304,9 @@ const trainResponseSchema = z.array(
 );
 
 export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumber: string) => {
-  const res = await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`);
+  const res = await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`, {
+    "Digitraffic-User": digitrafficUser,
+  });
 
   const data = trainResponseSchema.parse(res);
   const train = data[0];

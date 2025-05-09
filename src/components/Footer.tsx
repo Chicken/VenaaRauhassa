@@ -20,10 +20,10 @@ export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
         💬 Anna palautetta
       </Button>
 
-      <p style={{ color: "#949090" }}>
+      <p style={{ color: "#757575" }}>
         Tämä on{" "}
         <a
-          style={{ color: "#949090", textDecoration: "underline" }}
+          style={{ color: "#757575", textDecoration: "underline" }}
           href="https://github.com/Chicken/VenaaRauhassa"
         >
           avoimen lähdekoodin
@@ -33,8 +33,8 @@ export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
 
       <a
         style={{
-          color: "#B1B0B0",
-          fontSize: "10px",
+          color: "#757575",
+          fontSize: "12px",
           marginLeft: "10px",
           marginRight: "10px",
           textDecoration: "underline",
@@ -46,8 +46,8 @@ export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
 
       <p
         style={{
-          color: "#B1B0B0",
-          fontSize: "10px",
+          color: "#757575",
+          fontSize: "12px",
           marginLeft: "10px",
           marginRight: "10px",
           marginTop: "5px",
@@ -56,7 +56,7 @@ export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
         Emme ole <span style={{ fontStyle: "italic" }}>VR-Yhtymä Oyj:n</span>, sen tytäryhtiöiden
         tai sen yhteistyökumppanien kanssa sidoksissa tai millään tavalla virallisesti yhteydessä
         niihin. Virallinen verkkosivusto on osoitteessa{" "}
-        <a style={{ color: "#B1B0B0", textDecoration: "underline" }} href="https://www.vr.fi/">
+        <a style={{ color: "#757575", textDecoration: "underline" }} href="https://www.vr.fi/">
           www.vr.fi
         </a>
         .

@@ -121,11 +121,23 @@ export const getServerSideProps = (async ({ res, query }) => {
       : undefined
   ).format("YYYY-MM-DD");
 
+  const maintenance = isInMaintenance();
+
+  if (maintenance) {
+    return {
+      props: {
+        maintenance,
+        initialDate,
+        initialTrains: [],
+      },
+    };
+  }
+
   const initialTrains = await getInitialTrains(initialDate);
 
   return {
     props: {
-      maintenance: isInMaintenance(),
+      maintenance,
       initialDate,
       initialTrains,
     },

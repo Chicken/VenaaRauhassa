@@ -11,8 +11,12 @@ const stationResponseSchema = z.array(
   })
 );
 
+export const digitrafficUser = "VenaaRauhassa";
+
 export const getStations = cache(12 * HOUR, async () => {
-  const res = await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations");
+  const res = await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations", {
+    "Digitraffic-User": digitrafficUser,
+  });
   const data = stationResponseSchema.parse(res);
   const filteredData = data.filter((s) => s.passengerTraffic);
   const stations = Object.fromEntries(filteredData.map((s) => [s.stationShortCode, s.stationName]));
@@ -34,7 +38,9 @@ const trainsResponseSchema = z.array(
 
 export const getInitialTrains = cache(30 * MINUTE, async (date: string) => {
   const [initialTrainsUnchecked, stations] = await Promise.all([
-    getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`),
+    getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`, {
+      "Digitraffic-User": digitrafficUser,
+    }),
     getStations(),
   ]);
 

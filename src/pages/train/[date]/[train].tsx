@@ -5,24 +5,24 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import { ZodError } from "zod";
-import { MiniMap } from "~/components/MiniMap";
-import { getBaseURL, isInMaintenance } from "~/lib/deployment";
-import { getStations } from "~/lib/digitraffic";
-import { getTrainOnDate } from "~/lib/vr";
-import { useStickyState } from "~/lib/hooks/useStickyState";
-import { error } from "~/lib/logger";
+import { ErrorComponent } from "~/components/ErrorComponent";
 import { LegendModal } from "~/components/LegendModal";
-import type { Train, Station, Wagon } from "~/types";
+import { MiniMap } from "~/components/MiniMap";
+import { SeatFinder } from "~/components/SeatFinder";
 import { SeatSlider } from "~/components/SeatSlider";
 import { WagonMap } from "~/components/WagonMap";
-import { SeatFinder } from "~/components/SeatFinder";
-import { useSyncUrlState } from "~/lib/hooks/useSyncUrlState";
-import { useSliderStyling } from "~/lib/hooks/useSliderStyling";
+import { getBaseURL, isInMaintenance } from "~/lib/deployment";
+import { getStations } from "~/lib/digitraffic";
 import { useDraggableMap } from "~/lib/hooks/useDraggableMap";
 import { useSeatScroll } from "~/lib/hooks/useSeatScroll";
 import { useSeatSelection } from "~/lib/hooks/useSeatSelection";
+import { useSliderStyling } from "~/lib/hooks/useSliderStyling";
+import { useStickyState } from "~/lib/hooks/useStickyState";
+import { useSyncUrlState } from "~/lib/hooks/useSyncUrlState";
+import { error } from "~/lib/logger";
 import { getDescription, processStations, processWagons } from "~/lib/trainUtils";
-import { ErrorComponent } from "~/components/ErrorComponent";
+import { getTrainOnDate } from "~/lib/vr";
+import type { Station, Train, Wagon } from "~/types";
 
 // TODO: site is slow, have some sort of loading skeleton, also for index
 
@@ -271,8 +271,8 @@ export default function TrainPage({
         >
           <a
             style={{
-              color: "#B1B0B0",
-              fontSize: "10px",
+              color: "#757575",
+              fontSize: "12px",
               marginLeft: "10px",
               marginRight: "10px",
               textDecoration: "underline",
@@ -286,8 +286,8 @@ export default function TrainPage({
 
           <a
             style={{
-              color: "#B1B0B0",
-              fontSize: "10px",
+              color: "#757575",
+              fontSize: "12px",
               marginLeft: "10px",
               marginRight: "10px",
               textDecoration: "underline",
@@ -299,8 +299,8 @@ export default function TrainPage({
 
           <p
             style={{
-              color: "#B1B0B0",
-              fontSize: "10px",
+              color: "#757575",
+              fontSize: "12px",
               marginLeft: "10px",
               marginRight: "10px",
               marginTop: "5px",
@@ -309,7 +309,7 @@ export default function TrainPage({
             Emme ole <span style={{ fontStyle: "italic" }}>VR-Yhtymä Oyj:n</span>, sen
             tytäryhtiöiden tai sen yhteistyökumppanien kanssa sidoksissa tai millään tavalla
             virallisesti yhteydessä niihin. Virallinen verkkosivusto on osoitteessa{" "}
-            <a style={{ color: "#B1B0B0", textDecoration: "underline" }} href="https://www.vr.fi/">
+            <a style={{ color: "#757575", textDecoration: "underline" }} href="https://www.vr.fi/">
               www.vr.fi
             </a>
             .
