@@ -8,9 +8,9 @@ import { error } from "~/lib/logger";
 import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
-import { sessionStore } from "~/lib/sessionStore";
 import { cache, MINUTE } from "~/lib/cacheFn";
 import { digitrafficUser } from "~/lib/digitraffic";
+import { sessionStore } from "~/lib/sessionStore";
 
 function createRandomString() {
   const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.";
@@ -100,34 +100,13 @@ async function vrLogin(username: string, password: string) {
   const callbackData = nullableCallbackData as { [K in keyof typeof nullableCallbackData]: string };
 
   const callbackUrl = `${env.VR_ID_API}/login/callback`;
-  const callbackRes = await client.post(callbackUrl, new URLSearchParams(callbackData).toString(), {
-    maxRedirects: 0,
-    validateStatus: (status) => status === 302,
-  });
-  if (typeof callbackRes.headers.location !== "string")
-    throw new Error("Failed to get callback url");
+  const callbackRes = await client.post(callbackUrl, new URLSearchParams(callbackData).toString());
 
-  let previousUrl = callbackUrl;
-  let currentUrl = callbackRes.headers.location;
-  while (!currentUrl.startsWith("intent://")) {
-    currentUrl = new URL(currentUrl, previousUrl).toString();
-    const redirectRes = await client.get(currentUrl, {
-      maxRedirects: 0,
-      validateStatus: (status) => [302, 307].includes(status),
-      headers: {
-        "User-Agent": env.VR_MOBILE_USER_AGENT,
-      },
-    });
-    previousUrl = currentUrl;
-    if (typeof redirectRes.headers.location !== "string")
-      throw new Error("Failed to get redirect url");
-    currentUrl = redirectRes.headers.location;
-  }
-  const intentUrl = new URL(currentUrl);
-  const intentLink = intentUrl.searchParams.get("link");
-  if (!intentLink) throw new Error("Failed to get intent link from intent url");
-  const intentLinkUrl = new URL(intentLink);
-  const sessionKey = intentLinkUrl.searchParams.get("session_key");
+  const sessionKey = new URL(
+    // i cant be arsed with typings rn
+    // eslint-disable-next-line
+    new URLSearchParams((callbackRes.request?.path as string).slice(2)).get("link")!
+  ).searchParams.get("session_key");
 
   const sessionId = crypto.randomUUID();
 
