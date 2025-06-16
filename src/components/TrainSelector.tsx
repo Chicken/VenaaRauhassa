@@ -53,7 +53,6 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
         format="DD.MM.YYYY"
       />
 
-      <br />
       <Select
         style={pickerStyle}
         disabled={maintenance || (selectedDate && trainsLoaded ? false : true)}
@@ -89,8 +88,6 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
         }
         options={allTrains}
       />
-
-      <br />
 
       <Button
         disabled={maintenance || (selectedDate && selectedTrain ? false : true)}

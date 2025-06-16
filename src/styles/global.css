@@ -55,6 +55,7 @@ body {
   flex-direction: column;
   align-items: center;
   margin-bottom: 50px;
+  gap: 10px;
 }
 
 .frontpage .footer {
