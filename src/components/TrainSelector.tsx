@@ -92,8 +92,6 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
 
       <br />
 
-      <br />
-
       <Button
         disabled={maintenance || (selectedDate && selectedTrain ? false : true)}
         loading={trainLoading}

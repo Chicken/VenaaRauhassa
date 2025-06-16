@@ -87,27 +87,27 @@ export default function Home({
 
       <FeedbackModal isFbModalOpen={isFbModalOpen} setIsFbModalOpen={setIsFbModalOpen} />
 
-      <Flex
-        style={{ width: "100%", gap: "5px" }}
-        justify={"center"}
-        align={"center"}
-        vertical={true}
-      >
-        <Header maintenance={maintenance} />
-
-        <TrainSelector
-          maintenance={maintenance}
-          initialDate={initialDate}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          selectedTrain={selectedTrain}
-          setSelectedTrain={setSelectedTrain}
-          trainsLoaded={trainsLoaded}
-          allTrains={allTrains}
-        />
+      <div className="frontpage">
+        <div className="content">
+          <div className="header">
+            <Header maintenance={maintenance} />
+          </div>
+          <div className="trainselector">
+            <TrainSelector
+              maintenance={maintenance}
+              initialDate={initialDate}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              selectedTrain={selectedTrain}
+              setSelectedTrain={setSelectedTrain}
+              trainsLoaded={trainsLoaded}
+              allTrains={allTrains}
+            />
+          </div>
+        </div>
 
         <Footer setIsFbModalOpen={setIsFbModalOpen} />
-      </Flex>
+      </div>
     </>
   );
 }

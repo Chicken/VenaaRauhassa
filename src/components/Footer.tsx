@@ -7,7 +7,7 @@ type FooterProps = {
 
 export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
   return (
-    <div style={{ position: "absolute", bottom: "0", textAlign: "center" }}>
+    <div className="footer">
       <Button
         onClick={() => setIsFbModalOpen(true)}
         style={{
@@ -35,8 +35,6 @@ export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
         style={{
           color: "#757575",
           fontSize: "12px",
-          marginLeft: "10px",
-          marginRight: "10px",
           textDecoration: "underline",
         }}
         href="https://www.digitraffic.fi/kayttoehdot/"
@@ -48,8 +46,6 @@ export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
         style={{
           color: "#757575",
           fontSize: "12px",
-          marginLeft: "10px",
-          marginRight: "10px",
           marginTop: "5px",
         }}
       >
