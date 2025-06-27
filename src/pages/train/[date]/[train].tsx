@@ -347,6 +347,10 @@ export const getServerSideProps = (async (context) => {
     return { props: { state: "error" } };
   }
 
+  if (!/^\d+$/.test(context.params.train)) {
+    return { props: { state: "error" } };
+  }
+
   const date = new Date(context.params.date);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(context.params.date) || Number.isNaN(date.getTime())) {
     return { props: { state: "error" } };
