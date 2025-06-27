@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { env } from "~/lib/env";
 import type { Station, Train, Wagon } from "~/types";
 
 export const processStations = (train: Train, allStations: Record<string, string>): Station[] => {
@@ -42,7 +43,7 @@ export const processWagons = (train: Train) => {
         .map((_, floor) => ({
           number: floor + 1,
           image:
-            "https://prod.wagonmap.prodvrfi.vrpublic.fi/images/v1.6.0/" +
+            env.VR_FLOORPLANS_URL +
             wagon.type +
             (wagon.floorCount !== 1 ? (floor ? "_up" : "_down") : "") +
             ".svg",
