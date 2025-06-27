@@ -19,6 +19,11 @@ body {
   box-shadow: 0 0 0 2px var(--handle-color) !important;
 }
 
+.rc-virtual-list-holder {
+  max-height: unset !important;
+  overflow-y: unset !important;
+}
+
 .layoutPadding {
   padding: 50px 50px 20px 50px;
   @media (max-width: 768px) {
@@ -43,7 +48,7 @@ body {
   flex-grow: 1;
 }
 
-.frontpage .header{
+.frontpage .header {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -62,7 +67,6 @@ body {
   width: 100%;
   text-align: center;
 }
-
 
 /* Wahonmap */
 .wagonClass {

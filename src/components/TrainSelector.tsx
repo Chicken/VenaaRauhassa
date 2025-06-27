@@ -86,6 +86,8 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
         filterSort={(optionA, optionB) =>
           parseInt(String(optionA.value ?? 0)) - parseInt(String(optionB.value ?? 0))
         }
+        virtual={false}
+        dropdownRender={(menu) => <div style={{ height: 250, overflow: "auto" }}>{menu}</div>}
         options={allTrains}
       />
 
