@@ -11,6 +11,8 @@ const slogans = [
   '"Junan suunnan vaihtamisessa on ongelmia, jarrut ovat liian tiukalla"',
   '"Omalla matkalla"',
   '"Tarkoituksella yksin"',
+  '"Olemme pysähdyksissä sillä meillä on kuljettaja hukassa"',
+  '"Hyvät matkustajat, veturi on tulessa, poistukaa junasta rauhallisesti"',
 ];
 
 type HeaderProps = {
