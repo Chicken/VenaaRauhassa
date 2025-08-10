@@ -277,6 +277,7 @@ const trainResponseSchema = z.array(
         commercialStop: z.boolean().optional(),
         stationShortCode: z.string(),
         scheduledTime: z.string(),
+        cancelled: z.boolean(),
       })
     ),
   })
@@ -293,7 +294,7 @@ export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumbe
 
   const auth = await getVrAuth();
 
-  train.timeTableRows = train.timeTableRows.filter((r) => r.trainStopping && r.commercialStop);
+  train.timeTableRows = train.timeTableRows.filter((r) => !r.cancelled && r.trainStopping && r.commercialStop);
   // TODO: figure out a real solution for this problem
   if (
     train.timeTableRows
