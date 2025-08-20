@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const slogans = [
+const jokes = [
   '"Ilman vieruskaveria"',
   '"Koska tässä kestää..."',
   '"Noniin ja Kokkolasta lähdettiin noin 45 minuuttia myöhässä. Syynä oli junakohtaukset ja rautatieongelmat"',
@@ -13,6 +13,8 @@ const slogans = [
   '"Tarkoituksella yksin"',
   '"Olemme pysähdyksissä sillä meillä on kuljettaja hukassa"',
   '"Hyvät matkustajat, veturi on tulessa, poistukaa junasta rauhallisesti"',
+  '"Juna on osallistunut autokolariin"',
+  '"Ratavaurion vuoksi raiteet ovat sähköisesti varautuneet"',
 ];
 
 type HeaderProps = {
@@ -20,12 +22,9 @@ type HeaderProps = {
 };
 
 export const Header: React.FC<HeaderProps> = ({ maintenance }) => {
-  const [sloganText, setSloganText] = useState<string | null>(null);
+  const [joke, setJoke] = useState<string | null>(null);
 
-  useEffect(() => {
-    const text = slogans[Math.floor(Math.random() * slogans.length)];
-    setSloganText(text ? text : "");
-  }, []);
+  useEffect(() => setJoke(jokes[Math.floor(Math.random() * jokes.length)]!), []);
 
   return (
     <>
@@ -48,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({ maintenance }) => {
           textAlign: "center",
         }}
       >
-        {sloganText}
+        {joke}
       </p>
       <br />
 
