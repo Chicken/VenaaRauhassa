@@ -2,9 +2,9 @@ import crypto from "crypto";
 import { JSDOM as JSDom } from "jsdom";
 import { z } from "zod";
 import { env } from "~/lib/env";
-import { getJSON, postJSON } from "~/lib/http";
+import { getJSON, postJSON, requestTimeout } from "~/lib/http";
 import { error } from "~/lib/logger";
-// TODO: refactor to use bent, axios cookiejar was just the easiest way to get this working for now
+// TODO: refactor to use fetch or something...
 import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
@@ -65,7 +65,9 @@ async function vrLogin(username: string, password: string) {
     }).toString()}`
   ).toString();
 
-  const loginInitRes = await client.get(initLoginUrl);
+  const loginInitRes = await client.get(initLoginUrl, {
+    signal: AbortSignal.timeout(requestTimeout),
+  });
   if (loginInitRes.status !== 200) throw new Error("Failed to get login init");
   if (typeof loginInitRes.data !== "string") throw new Error("Login init response was not text");
   const auth0Config = auth0ConfigSchema.parse(
@@ -76,15 +78,21 @@ async function vrLogin(username: string, password: string) {
     )
   );
 
-  const loginRes = await client.post(`${env.VR_ID_API}/usernamepassword/login`, {
-    client_id: env.VR_CLIENT_ID,
-    tenant: env.VR_ID_TENANT,
-    reponse_type: "token",
-    connection: env.VR_ID_CONNECTION,
-    state: auth0Config.extraParams.state,
-    username,
-    password,
-  });
+  const loginRes = await client.post(
+    `${env.VR_ID_API}/usernamepassword/login`,
+    {
+      client_id: env.VR_CLIENT_ID,
+      tenant: env.VR_ID_TENANT,
+      reponse_type: "token",
+      connection: env.VR_ID_CONNECTION,
+      state: auth0Config.extraParams.state,
+      username,
+      password,
+    },
+    {
+      signal: AbortSignal.timeout(requestTimeout),
+    }
+  );
   if (typeof loginRes.data !== "string") throw new Error("Login init response was not text");
   const { document: loginDataDom } = new JSDom(loginRes.data).window;
 
@@ -100,7 +108,9 @@ async function vrLogin(username: string, password: string) {
   const callbackData = nullableCallbackData as { [K in keyof typeof nullableCallbackData]: string };
 
   const callbackUrl = `${env.VR_ID_API}/login/callback`;
-  const callbackRes = await client.post(callbackUrl, new URLSearchParams(callbackData).toString());
+  const callbackRes = await client.post(callbackUrl, new URLSearchParams(callbackData).toString(), {
+    signal: AbortSignal.timeout(requestTimeout),
+  });
 
   const sessionKey = new URL(
     // i cant be arsed with typings rn
@@ -122,6 +132,7 @@ async function vrLogin(username: string, password: string) {
         "x-vr-sessionid": sessionId,
         "aste-apikey": env.VR_API_KEY,
       },
+      signal: AbortSignal.timeout(requestTimeout),
     }
   );
   if (typeof tokenRes.data !== "object") throw new Error("Token response was not json");
@@ -294,7 +305,9 @@ export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumbe
 
   const auth = await getVrAuth();
 
-  train.timeTableRows = train.timeTableRows.filter((r) => !r.cancelled && r.trainStopping && r.commercialStop);
+  train.timeTableRows = train.timeTableRows.filter(
+    (r) => !r.cancelled && r.trainStopping && r.commercialStop
+  );
   // TODO: figure out a real solution for this problem
   if (
     train.timeTableRows

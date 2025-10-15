@@ -1,6 +1,5 @@
-import bent from "bent";
-
 const userAgent = "VenaaRauhassa (https://github.com/Chicken/VenaaRauhassa)";
+export const requestTimeout = 5000; // in milliseconds
 
 const sanitizedKeywords = ["aste-apikey", "x-jwt-token", "password", "refreshtoken"];
 function sanitizeObject(obj: Record<string, unknown>) {
@@ -14,17 +13,17 @@ function sanitizeObject(obj: Record<string, unknown>) {
   return sanitized;
 }
 
-const _postJSON = bent("POST", "json", {
-  "User-Agent": userAgent,
-});
-
-export const postJSON = async (
-  url: string,
-  body?: bent.RequestBody,
-  headers?: Record<string, string>
-) => {
+export const postJSON = async (url: string, body?: unknown, headers?: Record<string, string>) => {
   try {
-    const res = (await _postJSON(url, body, headers)) as unknown;
+    const res = (await fetch(url, {
+      method: "POST",
+      headers: {
+        ...headers,
+        "User-Agent": userAgent,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(requestTimeout),
+    }).then((res) => res.json())) as unknown;
     return res;
   } catch (e: unknown) {
     if (e instanceof Error) {
@@ -39,13 +38,16 @@ export const postJSON = async (
   }
 };
 
-const _getJSON = bent("GET", "json", {
-  "User-Agent": userAgent,
-});
-
 export const getJSON = async (url: string, headers?: Record<string, string>) => {
   try {
-    const res = (await _getJSON(url, undefined, headers)) as unknown;
+    const res = (await fetch(url, {
+      method: "GET",
+      headers: {
+        ...headers,
+        "User-Agent": userAgent,
+      },
+      signal: AbortSignal.timeout(requestTimeout),
+    }).then((res) => res.json())) as unknown;
     return res;
   } catch (e: unknown) {
     if (e instanceof Error) {

@@ -9,12 +9,12 @@ export function cache<TFn extends AnyAsyncFn>(timeMs: number, fn: TFn): TFn {
     if (cache.has(key)) return cache.get(key)!;
     return new Promise((res, rej) => {
       fn(...args)
-      .then((result) => {
-        cache.set(key, result as Awaited<ReturnType<TFn>>);
-        setTimeout(() => cache.delete(key), timeMs);
-        res(result);
-      })
-      .catch((err) => rej(err))
+        .then((result) => {
+          cache.set(key, result as Awaited<ReturnType<TFn>>);
+          setTimeout(() => cache.delete(key), timeMs);
+          res(result);
+        })
+        .catch((err) => rej(err));
     });
   }) as TFn;
 }
