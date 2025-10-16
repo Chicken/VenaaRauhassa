@@ -21,6 +21,7 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
       headers: {
         ...headers,
         "User-Agent": userAgent,
+        "Content-Type": "application/json",
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
