@@ -1,5 +1,6 @@
+import { env } from "~/lib/env";
+
 const userAgent = "VenaaRauhassa (https://github.com/Chicken/VenaaRauhassa)";
-export const requestTimeout = 5000; // in milliseconds
 
 const sanitizedKeywords = ["aste-apikey", "x-jwt-token", "password", "refreshtoken"];
 function sanitizeObject(obj: Record<string, unknown>) {
@@ -22,7 +23,7 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
         "User-Agent": userAgent,
       },
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(requestTimeout),
+      signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
     }).then((res) => res.json())) as unknown;
     return res;
   } catch (e: unknown) {
@@ -46,7 +47,7 @@ export const getJSON = async (url: string, headers?: Record<string, string>) => 
         ...headers,
         "User-Agent": userAgent,
       },
-      signal: AbortSignal.timeout(requestTimeout),
+      signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
     }).then((res) => res.json())) as unknown;
     return res;
   } catch (e: unknown) {

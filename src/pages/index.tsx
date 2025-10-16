@@ -1,4 +1,3 @@
-import { Flex } from "antd";
 import dayjs from "dayjs";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Head from "next/head";
