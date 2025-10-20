@@ -33,7 +33,9 @@ export default function Home({
 
   const getTrains = useCallback(async (date: string) => {
     setTrainsLoaded(false);
-
+    
+    // TODO: wtf this should be done on the backend for caching
+    // after which request timeout env var should be returned to server side
     const res = await getInitialTrains(date);
     setAllTrains(res);
 

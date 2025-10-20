@@ -24,7 +24,7 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
         "Content-Type": "application/json",
       },
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
+      signal: AbortSignal.timeout(env.NEXT_PUBLIC_REQUEST_TIMEOUT),
     }).then((res) => res.json())) as unknown;
     return res;
   } catch (e: unknown) {
@@ -48,7 +48,7 @@ export const getJSON = async (url: string, headers?: Record<string, string>) => 
         ...headers,
         "User-Agent": userAgent,
       },
-      signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
+      signal: AbortSignal.timeout(env.NEXT_PUBLIC_REQUEST_TIMEOUT),
     }).then((res) => res.json())) as unknown;
     return res;
   } catch (e: unknown) {

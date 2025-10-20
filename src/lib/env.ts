@@ -18,13 +18,13 @@ export const env = createEnv({
     ERROR_HASTEBIN_URL: z.string().optional(),
     FEEDBACK_DISCORD_WEBHOOK: z.string().optional(),
     MAINTENANCE_MODE: z.string().optional(),
-    REQUEST_TIMEOUT: z.string().default("5000").transform((val) => parseInt(val, 10)), // in milliseconds
   },
   client: {
     NEXT_PUBLIC_PLAUSIBLE_SCRIPT: z.string().optional(),
     NEXT_PUBLIC_PLAUSIBLE_DOMAIN: z.string().optional(),
     NEXT_PUBLIC_BASE_URL: z.string().optional(),
     NEXT_PUBLIC_VERCEL_URL: z.string().optional(),
+    NEXT_PUBLIC_REQUEST_TIMEOUT: z.string().default("5000").transform((val) => parseInt(val, 10)), // in milliseconds
   },
   runtimeEnv: {
     VR_USER: process.env.VR_USER,
@@ -46,7 +46,7 @@ export const env = createEnv({
     NEXT_PUBLIC_PLAUSIBLE_DOMAIN: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
-    REQUEST_TIMEOUT: process.env.REQUEST_TIMEOUT,
+    NEXT_PUBLIC_REQUEST_TIMEOUT: process.env.NEXT_PUBLIC_REQUEST_TIMEOUT,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });

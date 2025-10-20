@@ -66,7 +66,7 @@ async function vrLogin(username: string, password: string) {
   ).toString();
 
   const loginInitRes = await client.get(initLoginUrl, {
-    signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
+    signal: AbortSignal.timeout(env.NEXT_PUBLIC_REQUEST_TIMEOUT),
   });
   if (loginInitRes.status !== 200) throw new Error("Failed to get login init");
   if (typeof loginInitRes.data !== "string") throw new Error("Login init response was not text");
@@ -90,7 +90,7 @@ async function vrLogin(username: string, password: string) {
       password,
     },
     {
-      signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
+      signal: AbortSignal.timeout(env.NEXT_PUBLIC_REQUEST_TIMEOUT),
     }
   );
   if (typeof loginRes.data !== "string") throw new Error("Login init response was not text");
@@ -109,7 +109,7 @@ async function vrLogin(username: string, password: string) {
 
   const callbackUrl = `${env.VR_ID_API}/login/callback`;
   const callbackRes = await client.post(callbackUrl, new URLSearchParams(callbackData).toString(), {
-    signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
+    signal: AbortSignal.timeout(env.NEXT_PUBLIC_REQUEST_TIMEOUT),
   });
 
   const sessionKey = new URL(
@@ -132,7 +132,7 @@ async function vrLogin(username: string, password: string) {
         "x-vr-sessionid": sessionId,
         "aste-apikey": env.VR_API_KEY,
       },
-      signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
+      signal: AbortSignal.timeout(env.NEXT_PUBLIC_REQUEST_TIMEOUT),
     }
   );
   if (typeof tokenRes.data !== "object") throw new Error("Token response was not json");
