@@ -260,9 +260,9 @@ async function getWagonMapData(
   } catch (e) {
     if (
       e instanceof Error &&
-      e.name === "StatusError" &&
-      // @ts-expect-error bent typings are wrong and we can't check for instanceof StatusError
-      (e.statusCode === 401 || e.statusCode === 403)
+      // @ts-expect-error lol no typings
+      // eslint-disable-next-line
+      (e.response?.status === 401 || e.response?.status === 403)
     ) {
       try {
         const newSession = await vrLogin(env.VR_USER, env.VR_PASS);
@@ -350,16 +350,19 @@ export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumbe
               wagons,
             };
           } catch (e) {
-            console.error(e);
-            void error(
-              {
-                date,
-                train: trainNumber,
-                error: e instanceof Error ? e.message : undefined,
-                message: "Wagon map data fetching failed",
-              },
-              e
-            ).catch(console.error);
+            // cant search because HSL
+            if (dep.stationShortCode !== "PSL" && arr.stationShortCode !== "HKI") {
+              console.error(e);
+              void error(
+                {
+                  date,
+                  train: trainNumber,
+                  error: e instanceof Error ? e.message : undefined,
+                  message: "Wagon map data fetching failed",
+                },
+                e
+              ).catch(console.error);
+            }
             return {
               dep,
               arr,
@@ -377,6 +380,7 @@ export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumbe
     newTrain.timeTableRows.at(-2) != null &&
     newTrain.timeTableRows.at(-1)!.wagons == null &&
     newTrain.timeTableRows.at(-2)!.wagons != null &&
+    // cant search because HSL
     newTrain.timeTableRows.at(-1)!.dep.stationShortCode === "PSL" &&
     newTrain.timeTableRows.at(-1)!.arr.stationShortCode === "HKI"
   ) {

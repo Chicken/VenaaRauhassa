@@ -25,7 +25,17 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
-    }).then((res) => res.json())) as unknown;
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = new Error(res.status + " " + res.statusText);
+        // @ts-expect-error just adding some ghost properties
+        err.response = res;
+        // @ts-expect-error just adding some ghost properties
+        err.responseBody = await res.json().catch(() => res.text().catch(() => null)) as unknown;
+        throw err;
+      }
+      return res.json();
+    })) as unknown;
     return res;
   } catch (e: unknown) {
     if (e instanceof Error) {
@@ -49,7 +59,17 @@ export const getJSON = async (url: string, headers?: Record<string, string>) => 
         "User-Agent": userAgent,
       },
       signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
-    }).then((res) => res.json())) as unknown;
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = new Error(res.status + " " + res.statusText);
+        // @ts-expect-error just adding some ghost properties
+        err.response = res;
+        // @ts-expect-error just adding some ghost properties
+        err.responseBody = await res.json().catch(() => res.text().catch(() => null)) as unknown;
+        throw err;
+      }
+      return res.json();
+    })) as unknown;
     return res;
   } catch (e: unknown) {
     if (e instanceof Error) {
