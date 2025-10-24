@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { JSDOM as JSDom } from "jsdom";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { env } from "~/lib/env";
 import { getJSON, postJSON } from "~/lib/http";
 import { error } from "~/lib/logger";
@@ -241,8 +241,9 @@ async function getWagonMapData(
   sessionId: string,
   token: string
 ) {
+  let res;
   try {
-    const res = await getJSON(
+    res = await getJSON(
       `${
         env.VR_API_URL
       }/trains/${trainNumber}/wagonmap/v3?departureStation=${departureStation}&arrivalStation=${arrivalStation}&departureTime=${departureTime.toISOString()}`,
@@ -272,6 +273,10 @@ async function getWagonMapData(
           expiresOn: new Date(newSession.expiresOn).getTime(),
         });
       } catch (_ignored) {}
+    }
+    if (e instanceof ZodError) {
+      // @ts-expect-error really abusing errors huh
+      e.input = res;
     }
     throw e;
   }
@@ -357,7 +362,12 @@ export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumbe
                 {
                   date,
                   train: trainNumber,
-                  error: e instanceof Error ? e.message : undefined,
+                  error:
+                    e instanceof Error
+                      ? e instanceof ZodError
+                        ? "Zod validation error"
+                        : e.name + " " + e.message
+                      : undefined,
                   message: "Wagon map data fetching failed",
                 },
                 e
