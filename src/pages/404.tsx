@@ -12,7 +12,14 @@ export default function NotFound() {
         <meta name="robots" content="noindex,nofollow" />
       </Head>
       <h1>Sivua ei löytynyt...</h1>
-      <Button onClick={() => void router.push("/").catch(console.error)}>
+      <Button
+        style={{
+          fontWeight: 500,
+          height: "40px",
+          fontSize: "16px",
+        }}
+        onClick={() => void router.push("/").catch(console.error)}
+      >
         <LeftCircleOutlined /> Etusivulle
       </Button>
     </div>

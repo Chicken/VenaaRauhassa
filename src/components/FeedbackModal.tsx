@@ -1,5 +1,5 @@
+import { Button, Form, Input, message, Modal } from "antd";
 import React, { type SetStateAction } from "react";
-import { Modal, Form, Input, Button, message } from "antd";
 
 type FeedbackModalProps = {
   isFbModalOpen: boolean;
@@ -60,26 +60,54 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             void (async () => {
               setIsFbModalOpen(false);
               fbForm.resetFields();
-              messageApi
-                .open({
-                  type: "success",
-                  content: "Kiitos palautteesta!",
-                })
-                .then(
-                  () => null,
-                  () => null
-                );
 
-              await fetch("/api/sendFeedback", {
+              void messageApi.open({
+                key: "feedback-loading",
+                type: "loading",
+                content: "Lähetetään palautetta...",
+              });
+
+              await fetch("/api/feedback", {
                 method: "POST",
                 body: JSON.stringify(values),
-              });
+              })
+                .then((res) => {
+                  if (!res.ok) throw new Error("Not ok");
+                  messageApi.destroy("feedback-loading");
+                  void messageApi.open({
+                    type: "success",
+                    content: "Kiitos palautteesta!",
+                  });
+                })
+                .catch(() => {
+                  messageApi.destroy("feedback-loading");
+                  void messageApi.open({
+                    type: "error",
+                    content: "Palautteen lähettäminen epäonnistui.",
+                  });
+                });
             })();
           }}
         >
+          <p>
+            Jos ilmoitat virheestä tai ongelmasta niin jätäthän sähköpostisi, jotta voimme
+            tarvittaessa kysyä lisätietoja. Ongelmia ja ominaisuuspyyntöjä voi myös luoda
+            Venaarauhassa projektin{" "}
+            <a
+              style={{
+                color: "rgba(0,0,0,0.7)",
+                textDecoration: "underline",
+              }}
+              href="https://github.com/Chicken/VenaaRauhassa/issues"
+            >
+              GitHub-repositorioon
+            </a>
+            .
+          </p>
           <Form.Item
             name="email"
             label="Sähköposti (Vapaaehtoinen)"
+            style={{ fontWeight: 500 }}
             rules={[
               {
                 type: "email",
@@ -93,6 +121,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
           <Form.Item
             label="Palaute"
             name="feedback"
+            style={{ fontWeight: 500 }}
             rules={[
               { required: true, message: "Tyhjää palautetta ei voi lähettää!" },
               { max: 1500, message: "Maksimipituus on 1500 merkkiä!" },

@@ -144,8 +144,6 @@ export const WagonMap: React.FC<WagonMapProps> = ({
                   const special =
                     extra || restaurant || wheelchair || compartment || petCoach || pet || bed;
 
-                  // TODO: show "kiintiöpaikat" with some color / border because they show up as "reserved" but actually arent
-
                   const proxies = [
                     <SvgProxy
                       key={seat.number + "-bg"}

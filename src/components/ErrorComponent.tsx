@@ -1,16 +1,27 @@
-import React from "react";
-import Head from "next/head";
-import { Button } from "antd";
 import { LeftCircleOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Button } from "antd";
+import Head from "next/head";
 import { useRouter } from "next/router";
+import React, { useState } from "react";
+import { FeedbackModal } from "~/components/FeedbackModal";
 
 type ErrorProps = {
-  maintenance?: boolean;
+  message: string;
+  /** default false */
+  showReload?: boolean;
+  /** default true */
+  showFeedback?: boolean;
   date?: string;
 };
 
-export const ErrorComponent: React.FC<ErrorProps> = ({ maintenance, date }) => {
+export const ErrorComponent: React.FC<ErrorProps> = ({
+  message,
+  showReload,
+  showFeedback,
+  date,
+}) => {
   const router = useRouter();
+  const [isFbModalOpen, setIsFbModalOpen] = useState<boolean>(false);
 
   return (
     <div style={{ textAlign: "center" }}>
@@ -18,18 +29,59 @@ export const ErrorComponent: React.FC<ErrorProps> = ({ maintenance, date }) => {
         <title>VenaaRauhassa - Virhe</title>
         <meta name="robots" content="noindex,nofollow" />
       </Head>
-      {maintenance ? (
-        <h1>Palvelu huoltokatkolla...</h1>
-      ) : (
-        <h1>Virhe tapahtui junaa haettaessa, yritä uudelleen</h1>
-      )}
-      <Button onClick={() => void router.push(date ? `/?date=${date}` : "/").catch(console.error)}>
-        <LeftCircleOutlined /> Takaisin
-      </Button>
-      {!maintenance && (
-        <Button onClick={() => window.location.reload()}>
-          <ReloadOutlined /> Yritä uudelleen
+      <h1>{message}</h1>
+      <div
+        style={{
+          marginBottom: "10px",
+        }}
+      >
+        <Button
+          style={{
+            fontWeight: 500,
+            height: "40px",
+            width: "170px",
+            fontSize: "16px",
+            marginRight: "10px",
+          }}
+          onClick={() => void router.push(date ? `/?date=${date}` : "/").catch(console.error)}
+        >
+          <LeftCircleOutlined /> Etusivulle
         </Button>
+        {showReload && (
+          <Button
+            style={{
+              fontWeight: 500,
+              height: "40px",
+              width: "170px",
+              fontSize: "16px",
+            }}
+            onClick={() => window.location.reload()}
+          >
+            <ReloadOutlined /> Yritä uudelleen
+          </Button>
+        )}
+      </div>
+      <FeedbackModal isFbModalOpen={isFbModalOpen} setIsFbModalOpen={setIsFbModalOpen} />
+
+      {(showFeedback ?? true) && (
+        <div style={{ maxWidth: "800px", margin: "auto" }}>
+          <p style={{ fontSize: "16px" }}>
+            Useasti virheet johtuvat VR:n ongelmista tai järjestelmämuutoksista.
+            Muut viat yritämme automaattisesti paikantaa ja korjata mahdollisemman nopeasti.
+            Voit kuitenkin halutessasi jättää palautetta.
+          </p>
+          <Button
+            onClick={() => setIsFbModalOpen(true)}
+            style={{
+              fontWeight: 500,
+              height: "40px",
+              fontSize: "16px",
+              marginRight: "10px",
+            }}
+          >
+            💬 Anna palautetta
+          </Button>
+        </div>
       )}
     </div>
   );

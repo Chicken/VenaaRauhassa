@@ -101,7 +101,27 @@ export default function TrainPage({
   useDraggableMap(mainMapRef, setSelectedSeat, changeSeatSelection);
 
   if (state === "error") {
-    return <ErrorComponent maintenance={maintenance} date={date} />;
+    return (
+      <ErrorComponent
+        message={
+          maintenance
+            ? "Palvelu huoltokatkolla..."
+            : "Virhe tapahtui junaa haettaessa, yritä uudelleen"
+        }
+        showReload={!maintenance}
+        date={date}
+      />
+    );
+  }
+
+  if (state === "invalid-params") {
+    return (
+      <ErrorComponent
+        message={"Virheellinen URL-osoite, tarkista linkki!"}
+        showFeedback={false}
+        date={date}
+      />
+    );
   }
 
   if (state !== "success") {
@@ -117,6 +137,11 @@ export default function TrainPage({
           <h1>Juna on lähtenyt jo aikoja sitten...</h1>
         )}
         <Button
+          style={{
+            fontWeight: 500,
+            height: "40px",
+            fontSize: "16px",
+          }}
           onClick={() => void router.push(date ? `/?date=${date}` : "/").catch(console.error)}
         >
           <LeftCircleOutlined /> Takaisin
@@ -344,16 +369,16 @@ export const getServerSideProps = (async (context) => {
     typeof context.params.date !== "string" ||
     typeof context.params.train !== "string"
   ) {
-    return { props: { state: "error" } };
+    return { props: { state: "invalid-params" } };
   }
 
   if (!/^\d+$/.test(context.params.train)) {
-    return { props: { state: "error" } };
+    return { props: { state: "invalid-params" } };
   }
 
   const date = new Date(context.params.date);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(context.params.date) || Number.isNaN(date.getTime())) {
-    return { props: { state: "error" } };
+    return { props: { state: "invalid-params" } };
   }
 
   if (date.getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000) {
@@ -425,19 +450,15 @@ export const getServerSideProps = (async (context) => {
     if (e instanceof ZodError) {
       console.error(e.issues, e.issues[0]);
     }
-    await error(
+    void error(
       {
         date: context.params.date,
         train: context.params.train,
-        ...(e instanceof Error
-          ? {
-              message: e.message,
-            }
-          : {}),
+        error: e instanceof Error ? e.message : undefined,
         url: "<" + getBaseURL() + context.resolvedUrl + ">",
       },
       e
-    );
+    ).catch(console.error);
     context.res.statusCode = 500;
     return { props: { state: "error", date: context.params.date } };
   }
@@ -450,6 +471,9 @@ export const getServerSideProps = (async (context) => {
         train: Train;
         stations: Station[];
         wagons: Wagon[];
+      }
+    | {
+        state: "invalid-params";
       }
     | {
         state: "train-not-found";

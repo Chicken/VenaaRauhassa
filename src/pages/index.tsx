@@ -1,3 +1,4 @@
+import { message } from "antd";
 import dayjs from "dayjs";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Head from "next/head";
@@ -16,6 +17,7 @@ export default function Home({
   maintenance,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const router = useRouter();
+  const [messageApi, messageContextHolder] = message.useMessage();
 
   const [allTrains, setAllTrains] = useState(initialTrains);
   const [trainsLoaded, setTrainsLoaded] = useState<boolean>(true);
@@ -33,14 +35,25 @@ export default function Home({
 
   const getTrains = useCallback(async (date: string) => {
     setTrainsLoaded(false);
-    
-    // TODO: wtf this should be done on the backend for caching
-    // after which request timeout env var should be returned to server side
-    const res = await getInitialTrains(date);
+
+    const res = (await fetch("/api/trains?date=" + date)
+      .then((res) => {
+        if (!res.ok) throw new Error("Not ok");
+        return res.json();
+      })
+      .catch((err) => {
+        console.error(err);
+        void messageApi.open({
+          type: "error",
+          content: "Junien hakeminen epäonnistui.",
+        });
+        return null;
+      })) as Awaited<ReturnType<typeof getInitialTrains>> | null;
+    if (res == null) return;
     setAllTrains(res);
 
     setTrainsLoaded(true);
-  }, []);
+  }, [messageApi]);
 
   useEffect(() => {
     if (selectedDate === initialDate) {
@@ -86,6 +99,7 @@ export default function Home({
         <link rel="canonical" href={getBaseURL() + "/"} />
       </Head>
 
+      {messageContextHolder}
       <FeedbackModal isFbModalOpen={isFbModalOpen} setIsFbModalOpen={setIsFbModalOpen} />
 
       <div className="frontpage">

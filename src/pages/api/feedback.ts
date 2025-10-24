@@ -10,7 +10,12 @@ interface ExtendedNextApiRequest extends NextApiRequest {
 }
 
 export default async function handler(req: ExtendedNextApiRequest, res: NextApiResponse) {
-  if (!env.FEEDBACK_DISCORD_WEBHOOK) {
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  if (!env.FEEDBACK_WEBHOOK) {
     res.status(500).json({ error: "Webhook URL not configured" });
     return;
   }
@@ -21,7 +26,7 @@ export default async function handler(req: ExtendedNextApiRequest, res: NextApiR
     ? "```Sähköposti: " + email + "\nPalaute: " + feedback + "```"
     : "```Palaute: " + feedback + "```";
 
-  const response = await fetch(env.FEEDBACK_DISCORD_WEBHOOK, {
+  const response = await fetch(env.FEEDBACK_WEBHOOK, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -29,11 +34,13 @@ export default async function handler(req: ExtendedNextApiRequest, res: NextApiR
     body: JSON.stringify({
       content: messageString,
     }),
-  });
+    signal: AbortSignal.timeout(5000),
+  }).catch((err) => ({ ok: false, error: err as unknown }));
 
   if (!response.ok) {
-    throw new Error("Failed to send feedback");
+    console.error("Failed to send feedback:", response);
+    res.status(500).json({ error: "Failed to send feedback" });
+  } else {
+    res.status(200).json({ message: "Feedback sent successfully" });
   }
-
-  res.status(200).json({ message: "Feedback sent successfully" });
 }
