@@ -175,7 +175,7 @@ async function getVrAuth(retry = 0): Promise<{ sessionId: string; token: string 
       token: newSession.bffToken,
     };
   }
-  if (currentSession.expiresOn < Date.now()) {
+  if (currentSession.expiresOn < Date.now() + 2 * MINUTE) {
     try {
       const newSession = await vrRefreshToken(currentSession.token, currentSession.sessionId);
       sessionStore.set({
