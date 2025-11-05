@@ -263,7 +263,7 @@ async function getWagonMapData(
       e instanceof Error &&
       // @ts-expect-error lol no typings
       // eslint-disable-next-line
-      (e.response?.status === 401 || e.response?.status === 403)
+      e.response?.status === 401
     ) {
       try {
         const newSession = await vrLogin(env.VR_USER, env.VR_PASS);
