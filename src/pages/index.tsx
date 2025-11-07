@@ -33,27 +33,30 @@ export default function Home({
     if (window.plausible) window.plausible("pageview");
   }, []);
 
-  const getTrains = useCallback(async (date: string) => {
-    setTrainsLoaded(false);
+  const getTrains = useCallback(
+    async (date: string) => {
+      setTrainsLoaded(false);
 
-    const res = (await fetch("/api/trains?date=" + date)
-      .then((res) => {
-        if (!res.ok) throw new Error("Not ok");
-        return res.json();
-      })
-      .catch((err) => {
-        console.error(err);
-        void messageApi.open({
-          type: "error",
-          content: "Junien hakeminen epäonnistui.",
-        });
-        return null;
-      })) as Awaited<ReturnType<typeof getInitialTrains>> | null;
-    if (res == null) return;
-    setAllTrains(res);
+      const res = (await fetch("/api/trains?date=" + date)
+        .then((res) => {
+          if (!res.ok) throw new Error("Not ok");
+          return res.json();
+        })
+        .catch((err) => {
+          console.error(err);
+          void messageApi.open({
+            type: "error",
+            content: "Junien hakeminen epäonnistui.",
+          });
+          return null;
+        })) as Awaited<ReturnType<typeof getInitialTrains>> | null;
+      if (res == null) return;
+      setAllTrains(res);
 
-    setTrainsLoaded(true);
-  }, [messageApi]);
+      setTrainsLoaded(true);
+    },
+    [messageApi]
+  );
 
   useEffect(() => {
     if (selectedDate === initialDate) {

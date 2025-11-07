@@ -66,9 +66,9 @@ export const ErrorComponent: React.FC<ErrorProps> = ({
       {(showFeedback ?? true) && (
         <div style={{ maxWidth: "800px", margin: "auto" }}>
           <p style={{ fontSize: "16px" }}>
-            Useasti virheet johtuvat VR:n ongelmista tai järjestelmämuutoksista.
-            Muut viat yritämme automaattisesti paikantaa ja korjata mahdollisemman nopeasti.
-            Voit kuitenkin halutessasi jättää palautetta.
+            Useasti virheet johtuvat VR:n ongelmista tai järjestelmämuutoksista. Muut viat yritämme
+            automaattisesti paikantaa ja korjata mahdollisemman nopeasti. Voit kuitenkin halutessasi
+            jättää palautetta.
           </p>
           <Button
             onClick={() => setIsFbModalOpen(true)}

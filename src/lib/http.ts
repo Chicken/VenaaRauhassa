@@ -31,7 +31,7 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
         // @ts-expect-error just adding some ghost properties
         err.response = res;
         // @ts-expect-error just adding some ghost properties
-        err.responseBody = await res.json().catch(() => res.text().catch(() => null)) as unknown;
+        err.responseBody = (await res.json().catch(() => res.text().catch(() => null))) as unknown;
         throw err;
       }
       return res.json();
@@ -65,7 +65,7 @@ export const getJSON = async (url: string, headers?: Record<string, string>) => 
         // @ts-expect-error just adding some ghost properties
         err.response = res;
         // @ts-expect-error just adding some ghost properties
-        err.responseBody = await res.json().catch(() => res.text().catch(() => null)) as unknown;
+        err.responseBody = (await res.json().catch(() => res.text().catch(() => null))) as unknown;
         throw err;
       }
       return res.json();
