@@ -1,2 +1,8 @@
-User-agent: *
+User-Agent: *
+# AI bad
+Content-Signal: ai-train=no, search=yes, ai-input=no
 Allow: /
+
+# And shame on you
+User-Agent: meta-externalagent
+Disallow: /
