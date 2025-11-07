@@ -27,7 +27,10 @@ async function uploadError(str: string) {
     signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
   })
     .then((res) => res.json())
-    .catch(() => ({ key: "-error-" }))) as { key: string };
+    .catch((e) => {
+      console.error(e);
+      return { key: "-error-" };
+    })) as { key: string };
   return `${env.ERROR_UPLOAD_URL}/${res.key}.js`;
 }
 
