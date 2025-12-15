@@ -71,7 +71,7 @@ export const processWagons = (train: Train) => {
         })),
     }));
 
-  if (["IM2", "EDO"].includes(wagons[0]?.type ?? "")) wagons.reverse();
+  if (["IM2", "EDO", "MC2"].includes(wagons[0]?.type ?? "")) wagons.reverse();
   return wagons;
 };
 
