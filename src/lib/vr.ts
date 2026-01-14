@@ -294,6 +294,7 @@ const trainResponseSchema = z.array(
         stationShortCode: z.string(),
         scheduledTime: z.string(),
         cancelled: z.boolean(),
+        type: z.enum(["ARRIVAL", "DEPARTURE"]),
       })
     ),
   })
@@ -313,6 +314,10 @@ export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumbe
   train.timeTableRows = train.timeTableRows.filter(
     (r) => !r.cancelled && r.trainStopping && r.commercialStop
   );
+  // Somethings filtering is whack with cancellations, remove first or last if they are clearly wrong
+  if (train.timeTableRows.at(0)?.type === "ARRIVAL") train.timeTableRows.shift();
+  if (train.timeTableRows.at(-1)?.type === "DEPARTURE") train.timeTableRows.pop();
+
   // TODO: figure out a real solution for this problem
   if (
     train.timeTableRows
