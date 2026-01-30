@@ -47,6 +47,7 @@ export const processWagons = (train: Train) => {
             wagon.type +
             (wagon.floorCount !== 1 ? (floor ? "_up" : "_down") : "") +
             ".svg",
+          services: floor ? wagon.servicesUp : wagon.servicesDown,
           seats: wagon.placeList
             .filter((place) => place.floor === floor + 1)
             .map((place) => ({

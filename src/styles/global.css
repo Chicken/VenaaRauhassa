@@ -100,7 +100,7 @@ body {
   margin-top: 10px;
   position: relative;
   user-select: none;
-  width: 50%;
+  width: 65%;
   margin-left: auto;
   margin-right: auto;
   cursor: pointer;
@@ -119,6 +119,18 @@ body {
   margin-top: auto;
   display: flex;
   align-items: center;
+  container-type: inline-size;
+  overflow: hidden;
+}
+
+@container (max-width: 100px) {
+  .ekstra-text {
+    display: none;
+  }
+  .ekstra-icon {
+    width: 22px;
+    height: 22px;
+  }
 }
 
 .minimap-locomotive-left {
@@ -131,7 +143,7 @@ body {
 
 @media (max-width: 1200px) {
   .minimap {
-    width: 75%;
+    width: 80%;
   }
 }
 

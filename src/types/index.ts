@@ -19,6 +19,7 @@ export type Wagon = {
 export type Floor = {
   number: number;
   image: string;
+  services: string[];
   seats: Seat[];
 };
 

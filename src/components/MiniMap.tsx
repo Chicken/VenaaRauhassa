@@ -1,3 +1,4 @@
+import { Baby, Coffee, PawPrint, Plus, Utensils, VolumeX } from "lucide-react";
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useMediaQuery } from "react-responsive";
 import { Easing, animate } from "~/lib/animate";
@@ -241,26 +242,94 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
           const wagonHasUpstairs = wagon.floors.length > 1;
           return (
             <div key={wagon.number} className="minimap-wagon-container">
-              {wagon.floors.map((floor) => {
+              {[...wagon.floors].reverse().map((floor) => {
                 const isLeft = idx === 0;
                 const isRight = idx === wagons.length - 1;
                 const isEnd = isLeft || isRight;
-                const isTop = !wagonHasUpstairs || floor.number === 1;
+                const isTop = !wagonHasUpstairs || floor.number === 2;
+                const isBottom = !wagonHasUpstairs || floor.number === 1;
                 let className = "minimap-wagon ";
                 if (isEnd && isTop)
                   className += isLeft ? "minimap-locomotive-left" : "minimap-locomotive-right";
-                // TODO: show icons for stuff like extra, restaurant, pets, etc.
                 return (
                   <div
                     key={floor.number}
                     className={className}
                     style={{
+                      position: "relative",
                       height: hasDoubleDeckers ? (wagonHasUpstairs ? "50%" : "70%") : "100%",
                     }}
                   >
-                    <span style={{ fontWeight: "bold", fontSize: "12px", paddingLeft: "8px" }}>
+                    <span
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        paddingLeft: "8px",
+                        position: "absolute",
+                      }}
+                    >
                       {wagon.number}
                     </span>
+                    {floor.services.includes("PETS") ? (
+                      <span style={{ margin: "auto" }}>
+                        <PawPrint size="22px" />
+                      </span>
+                    ) : null}
+                    {floor.services.includes("PLAY-AREA") ? (
+                      <span style={{ margin: "auto" }}>
+                        <Baby size="22px" />
+                      </span>
+                    ) : null}
+                    {floor.services.includes("EKSTRA-RELAXED") ? (
+                      <span
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "12px",
+                          margin: "auto",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <span className="ekstra-text">Ekstra</span>{" "}
+                        <Coffee size="18px" className="ekstra-icon" />
+                      </span>
+                    ) : null}
+                    {floor.services.includes("EKSTRA-CALM") ? (
+                      <span
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "12px",
+                          margin: "auto",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <span className="ekstra-text">Ekstra</span>{" "}
+                        <VolumeX size="18px" className="ekstra-icon"  />
+                      </span>
+                    ) : null}
+                    {floor.services.includes("EKSTRA-PLUS") ? (
+                      <span
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "12px",
+                          margin: "auto",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <span className="ekstra-text">Ekstra</span>{" "}
+                        <Plus size="18px" className="ekstra-icon" />
+                      </span>
+                    ) : null}
+                    {["TPB", "RX", "RK", "ERD", "TTC"].includes(wagon.type) && isBottom ? (
+                      <span style={{ margin: "auto" }}>
+                        <Utensils size="22px" />
+                      </span>
+                    ) : null}
                   </div>
                 );
               })}
