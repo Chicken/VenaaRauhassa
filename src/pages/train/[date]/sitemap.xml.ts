@@ -1,6 +1,6 @@
 import type { GetServerSidePropsContext } from "next";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
-import { getJSON } from "~/lib/http";
+import { getInitialTrains } from "~/lib/digitraffic";
 
 function generateSiteMap(paths: string[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -9,7 +9,7 @@ function generateSiteMap(paths: string[]): string {
       (path) => `
   <url>
     <loc>${getBaseURL()}${path}</loc>
-    <changefreq>hourly</changefreq>
+    <changefreq>daily</changefreq>
   </url>`
     )
     .join("")}
@@ -24,7 +24,7 @@ export default function SiteMap() {
 export async function getServerSideProps({ res, query }: GetServerSidePropsContext) {
   if (isInMaintenance()) {
     res.statusCode = 503;
-    res.setHeader("Retry-After", "86400");
+    res.setHeader("Retry-After", "43200"); // 12 hours
     res.end();
 
     return {
@@ -35,19 +35,32 @@ export async function getServerSideProps({ res, query }: GetServerSidePropsConte
   res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
 
   const date = query.date as string;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(query.date as string) || Number.isNaN(new Date(date).getTime())) {
+    res.statusCode = 400;
+    res.end();
 
-  const trains = (await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`).catch(
-    () => []
-  )) as {
-    trainNumber: number;
-    trainType: string;
-  }[];
+    return {
+      props: {},
+    };
+  }
 
-  const trainNumbers = trains
-    .filter((t) => ["IC", "S"].includes(t.trainType))
-    .map((train) => train.trainNumber);
+  const dateObj = new Date(date);
+  if (
+    // Restrict sitemap to now - 2d .. now + 8d
+    dateObj.getTime() < Date.now() - 2 * 24 * 60 * 60 * 1000 ||
+    dateObj.getTime() > Date.now() + 8 * 24 * 60 * 60 * 1000
+  ) {
+    res.statusCode = 404;
+    res.end();
 
-  const paths = trainNumbers.map((n) => `/train/${date}/${n}`);
+    return {
+      props: {},
+    };
+  }
+
+  const trains = await getInitialTrains(date);
+
+  const paths = trains.map((train) => `/train/${date}/${train.value}`);
   const sitemap = generateSiteMap(paths);
 
   res.setHeader("Content-Type", "text/xml");

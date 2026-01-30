@@ -362,7 +362,7 @@ export const getServerSideProps = (async (context) => {
     };
   }
 
-  context.res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+  context.res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
 
   if (
     !context.params ||

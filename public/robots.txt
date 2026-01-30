@@ -1,8 +1,25 @@
-User-Agent: *
-# AI bad
+User-agent: Googlebot
 Content-Signal: ai-train=no, search=yes, ai-input=no
 Allow: /
+Disallow: /api/
+Crawl-delay: 5
 
-# And shame on you
-User-Agent: meta-externalagent
-Disallow: /
+User-agent: Bingbot
+Content-Signal: ai-train=no, search=yes, ai-input=no
+Allow: /
+Disallow: /api/
+Crawl-delay: 10
+
+User-agent: DuckDuckBot
+Content-Signal: ai-train=no, search=yes, ai-input=no
+Allow: /
+Disallow: /api/
+Crawl-delay: 10
+
+User-Agent: *
+Content-Signal: ai-train=no, search=yes, ai-input=no
+Allow: /
+Disallow: /api/
+Crawl-delay: 30
+
+Sitemap: https://venaarauhassa.fi/sitemap.xml

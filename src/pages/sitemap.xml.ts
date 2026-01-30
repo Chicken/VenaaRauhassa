@@ -33,11 +33,12 @@ export function getServerSideProps({ res }: GetServerSidePropsContext) {
 
   res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
 
-  const nextTwoWeeks = Array(15)
+  // also update limits in the actual sitemap implementation
+  const week = Array(7)
     .fill("")
     .map((_, i) => dayjs().add(i, "day").format("YYYY-MM-DD"));
 
-  const paths = nextTwoWeeks.map((date) => `/train/${date}/sitemap.xml`);
+  const paths = week.map((date) => `/train/${date}/sitemap.xml`);
   const sitemap = generateSiteMapIndex(paths);
 
   res.setHeader("Content-Type", "text/xml");
