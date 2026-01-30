@@ -59,10 +59,7 @@ export default function TrainPage({
       // @ts-expect-error no types for globally available plausible function
       // eslint-disable-next-line
       window.plausible("pageview", {
-        u: (window.location.origin + window.location.pathname)
-          .split("/")
-          .filter((_, i) => i != 4)
-          .join("/"),
+        u: (window.location.origin + window.location.pathname).replace(/\/\d{4}-\d{2}-\d{2}/, ""),
       });
     }
   }, []);
@@ -444,7 +441,7 @@ export const getServerSideProps = (async (context) => {
         train: {
           trainNumber: train.trainNumber,
           trainType: train.trainType,
-          departureDate: train.departureDate
+          departureDate: train.departureDate,
         },
         stations,
         wagons,

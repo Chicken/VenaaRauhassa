@@ -29,8 +29,13 @@ export default function Home({
 
   useEffect(() => {
     // @ts-expect-error no types for globally available plausible function
-    // eslint-disable-next-line
-    if (window.plausible) window.plausible("pageview");
+    if (window.plausible) {
+      // @ts-expect-error no types for globally available plausible function
+      // eslint-disable-next-line
+      window.plausible("pageview", {
+        u: (window.location.origin + window.location.pathname).replace(/\/\d{4}-\d{2}-\d{2}/, ""),
+      });
+    }
   }, []);
 
   const getTrains = useCallback(
