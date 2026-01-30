@@ -11,6 +11,7 @@ import { CookieJar } from "tough-cookie";
 import { cache, MINUTE } from "~/lib/cacheFn";
 import { digitrafficUser } from "~/lib/digitraffic";
 import { sessionStore } from "~/lib/sessionStore";
+import { sessionUpdates } from "~/lib/metrics";
 
 function createRandomString() {
   const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.";
@@ -164,6 +165,8 @@ async function vrRefreshToken(token: string, sessionId: string) {
 async function getVrAuth(retry = 0): Promise<{ sessionId: string; token: string }> {
   const currentSession = sessionStore.get();
   if (!currentSession || retry >= 2) {
+    if (!currentSession) sessionUpdates.inc({ type: "login", reason: "no-session" });
+    else sessionUpdates.inc({ type: "login", reason: "retry-limit" });
     const newSession = await vrLogin(env.VR_USER, env.VR_PASS);
     sessionStore.set({
       sessionId: newSession.sessionId,
@@ -177,6 +180,8 @@ async function getVrAuth(retry = 0): Promise<{ sessionId: string; token: string 
   }
   if (currentSession.expiresOn < Date.now() + 2 * MINUTE) {
     try {
+      if (retry > 0) sessionUpdates.inc({ type: "refresh", reason: "retry" });
+      else sessionUpdates.inc({ type: "refresh", reason: "expiry" });
       const newSession = await vrRefreshToken(currentSession.token, currentSession.sessionId);
       sessionStore.set({
         sessionId: currentSession.sessionId,
@@ -266,6 +271,7 @@ async function getWagonMapData(
       e.response?.status === 401
     ) {
       try {
+        sessionUpdates.inc({ type: "login", reason: "wagon-error" });
         const newSession = await vrLogin(env.VR_USER, env.VR_PASS);
         sessionStore.set({
           sessionId: newSession.sessionId,
@@ -413,4 +419,4 @@ export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumbe
   for (const ttr of newTrain.timeTableRows) delete ttr.error;
 
   return newTrain;
-});
+}, "getTrainOnDate");

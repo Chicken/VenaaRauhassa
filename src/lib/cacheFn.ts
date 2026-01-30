@@ -1,12 +1,18 @@
+import { cacheRequests } from "~/lib/metrics";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyAsyncFn = (...args: any[]) => Promise<any>;
 
-export function cache<TFn extends AnyAsyncFn>(timeMs: number, fn: TFn): TFn {
+export function cache<TFn extends AnyAsyncFn>(timeMs: number, fn: TFn, metricsName?: string): TFn {
   const cache = new Map<string, Awaited<ReturnType<TFn>>>();
   return ((...args: Parameters<TFn>) => {
     const key = args.map((arg) => String(arg)).join(",");
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    if (cache.has(key)) return cache.get(key)!;
+    if (cache.has(key)) {
+      if (metricsName) cacheRequests.inc({ function: metricsName, status: "hit" });
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return cache.get(key)!;
+    }
+    if (metricsName) cacheRequests.inc({ function: metricsName, status: "miss" });
     return new Promise((res, rej) => {
       fn(...args)
         .then((result) => {

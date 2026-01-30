@@ -1,4 +1,5 @@
 import { env } from "~/lib/env";
+import { externalApiRequestDuration, externalApiRequests } from "~/lib/metrics";
 
 const userAgent = "VenaaRauhassa (https://github.com/Chicken/VenaaRauhassa)";
 
@@ -14,7 +15,15 @@ function sanitizeObject(obj: Record<string, unknown>) {
   return sanitized;
 }
 
+function getVendor(url: string) {
+  if (url.includes("vr.fi") || url.includes("vrpublic.fi")) return "VR";
+  if (url.includes("digitraffic.fi")) return "Digitraffic";
+  return "Other";
+}
+
 export const postJSON = async (url: string, body?: unknown, headers?: Record<string, string>) => {
+  const vendor = getVendor(url);
+  const end = externalApiRequestDuration.startTimer({ vendor, method: "POST" });
   try {
     const res = (await fetch(url, {
       method: "POST",
@@ -26,6 +35,7 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
     }).then(async (res) => {
+      externalApiRequests.inc({ vendor, method: "POST", status: res.status });
       if (!res.ok) {
         const err = new Error(res.status + " " + res.statusText);
         // @ts-expect-error just adding some ghost properties
@@ -36,8 +46,12 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
       }
       return res.json();
     })) as unknown;
+    end();
     return res;
   } catch (e: unknown) {
+    end(); // ensure timer ends on error too, though status logic above handles the response code. 
+           // If fetch fails (network error), status won't be recorded in the .then block.
+           // We could add a catch block counter for network errors if needed.
     if (e instanceof Error) {
       // @ts-expect-error just adding some ghost properties
       e.requestUrl = url;
@@ -51,6 +65,8 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
 };
 
 export const getJSON = async (url: string, headers?: Record<string, string>) => {
+  const vendor = getVendor(url);
+  const end = externalApiRequestDuration.startTimer({ vendor, method: "GET" });
   try {
     const res = (await fetch(url, {
       method: "GET",
@@ -60,6 +76,7 @@ export const getJSON = async (url: string, headers?: Record<string, string>) => 
       },
       signal: AbortSignal.timeout(env.REQUEST_TIMEOUT),
     }).then(async (res) => {
+      externalApiRequests.inc({ vendor, method: "GET", status: res.status });
       if (!res.ok) {
         const err = new Error(res.status + " " + res.statusText);
         // @ts-expect-error just adding some ghost properties
@@ -70,8 +87,10 @@ export const getJSON = async (url: string, headers?: Record<string, string>) => 
       }
       return res.json();
     })) as unknown;
+    end();
     return res;
   } catch (e: unknown) {
+    end();
     if (e instanceof Error) {
       // @ts-expect-error just adding some ghost properties
       e.requestUrl = url;

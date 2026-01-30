@@ -21,7 +21,7 @@ export const getStations = cache(12 * HOUR, async () => {
   const filteredData = data.filter((s) => s.passengerTraffic);
   const stations = Object.fromEntries(filteredData.map((s) => [s.stationShortCode, s.stationName]));
   return stations;
-});
+}, "getStations");
 
 const trainsResponseSchema = z.array(
   z.object({
@@ -75,4 +75,4 @@ export const getInitialTrains = cache(30 * MINUTE, async (date: string) => {
         arrivalStationName: stations[arrival.stationShortCode] ?? arrival.stationShortCode,
       };
     });
-});
+}, "getInitialTrains");

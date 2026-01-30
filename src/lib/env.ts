@@ -22,6 +22,7 @@ export const env = createEnv({
       .string()
       .default("5000")
       .transform((val) => parseInt(val, 10)), // in milliseconds
+    METRICS_SECRET: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_PLAUSIBLE_SCRIPT: z.string().optional(),
@@ -46,6 +47,7 @@ export const env = createEnv({
     FEEDBACK_WEBHOOK: process.env.FEEDBACK_WEBHOOK,
     MAINTENANCE_MODE: process.env.MAINTENANCE_MODE,
     REQUEST_TIMEOUT: process.env.REQUEST_TIMEOUT,
+    METRICS_SECRET: process.env.METRICS_SECRET,
     NEXT_PUBLIC_PLAUSIBLE_SCRIPT: process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT,
     NEXT_PUBLIC_PLAUSIBLE_DOMAIN: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
