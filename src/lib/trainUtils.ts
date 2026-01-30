@@ -86,8 +86,7 @@ export const getDescription = (wagons: Wagon[], train: Omit<Train, "timeTableRow
       f.seats.filter(
         (seat) =>
           seat.productType === "ECO_CLASS_SEAT" &&
-          seat.type !== "VEHICLE" &&
-          seat.services.length === 0
+          seat.type !== "VEHICLE"
       )
     )
   );
