@@ -134,8 +134,16 @@ export const WagonMap: React.FC<WagonMapProps> = ({
                     .filter((r) => r !== "missing")
                     .every((r) => r === "open");
 
-                  const extra = seat.productType === "EXTRA_CLASS_SEAT";
-                  const restaurant = seat.productType === "SEAT_UPSTAIRS_RESTAURANT_WAGON";
+                  const extra = [
+                    "EXTRA_CLASS_SEAT",
+                    "EXTRA_PLUS_SEAT",
+                    "SINGLE_EXTRA_CLASS_SEAT",
+                    "EXTRA_PLUS_SINGLE_SEAT",
+                  ].includes(seat.productType);
+                  const restaurant = [
+                    "SINGLE_SEAT_UPSTAIRS_RESTAURANT_WAGON",
+                    "SEAT_UPSTAIRS_RESTAURANT_WAGON",
+                  ].includes(seat.productType);
                   const wheelchair = seat.services.some((s) => s.includes("WHEELCHAIR"));
                   const compartment = seat.services.some((s) => s.includes("COMPARTMENT"));
                   const petCoach = seat.services.some((s) => s.includes("PET-COACH"));
