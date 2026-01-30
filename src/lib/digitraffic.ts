@@ -13,7 +13,7 @@ const stationResponseSchema = z.array(
 
 export const digitrafficUser = "VenaaRauhassa";
 
-export const getStations = cache(12 * HOUR, async () => {
+export const getStations = cache(12 * HOUR, 24 * HOUR, async () => {
   const res = await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations", {
     "Digitraffic-User": digitrafficUser,
   });
@@ -36,7 +36,7 @@ const trainsResponseSchema = z.array(
   })
 );
 
-export const getInitialTrains = cache(30 * MINUTE, async (date: string) => {
+export const getInitialTrains = cache(30 * MINUTE, 24 * HOUR, async (date: string) => {
   const [initialTrainsUnchecked, stations] = await Promise.all([
     getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}`, {
       "Digitraffic-User": digitrafficUser,

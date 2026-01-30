@@ -8,7 +8,7 @@ import { error } from "~/lib/logger";
 import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
-import { cache, MINUTE } from "~/lib/cacheFn";
+import { cache, HOUR, MINUTE } from "~/lib/cacheFn";
 import { digitrafficUser } from "~/lib/digitraffic";
 import { sessionStore } from "~/lib/sessionStore";
 import { sessionUpdates } from "~/lib/metrics";
@@ -306,7 +306,7 @@ const trainResponseSchema = z.array(
   })
 );
 
-export const getTrainOnDate = cache(10 * MINUTE, async (date: string, trainNumber: string) => {
+export const getTrainOnDate = cache(10 * MINUTE, 2 * HOUR, async (date: string, trainNumber: string) => {
   const res = await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`, {
     "Digitraffic-User": digitrafficUser,
   });
