@@ -109,6 +109,7 @@ export default function TrainPage({
             : "Virhe tapahtui junaa haettaessa, yritä uudelleen"
         }
         showReload={!maintenance}
+        showFeedback={!maintenance}
         date={date}
       />
     );
