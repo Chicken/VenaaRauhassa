@@ -4,7 +4,7 @@ import type { Train, Station } from "~/types";
 
 export const useSyncUrlState = (
   router: NextRouter,
-  train: Train | undefined,
+  train: Omit<Train, "timeTableRows"> | undefined,
   stations: Station[] | undefined,
   timeRange: number[],
   selectedSeat: number[] | null
@@ -17,12 +17,12 @@ export const useSyncUrlState = (
     }
     if (
       timeRange[0] === 0 &&
-      timeRange[1] === train?.timeTableRows.length &&
+      timeRange[1] === stations.length - 1 &&
       selectedSeat === null
     ) {
       safeShallow(`/train/${train.departureDate}/${train.trainNumber}`);
     } else if (
-      (timeRange[0] !== 0 || timeRange[1] !== train?.timeTableRows.length) &&
+      (timeRange[0] !== 0 || timeRange[1] !== stations.length - 1) &&
       selectedSeat !== null
     ) {
       safeShallow(

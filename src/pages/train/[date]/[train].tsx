@@ -408,7 +408,7 @@ export const getServerSideProps = (async (context) => {
 
     const wagons = processWagons(train);
 
-    let initialRange: number[] | null = [0, train.timeTableRows.length];
+    let initialRange: number[] | null = [0, stations.length - 1];
     let initialSelectedSeat: number[] | null = null;
 
     if (typeof context.query.from === "string" && typeof context.query.to === "string") {
@@ -440,7 +440,11 @@ export const getServerSideProps = (async (context) => {
         date: context.params.date,
         initialRange,
         initialSelectedSeat,
-        train,
+        train: {
+          trainNumber: train.trainNumber,
+          trainType: train.trainType,
+          departureDate: train.departureDate
+        },
         stations,
         wagons,
       },
@@ -468,7 +472,7 @@ export const getServerSideProps = (async (context) => {
         state: "success";
         initialRange: number[];
         initialSelectedSeat: number[] | null;
-        train: Train;
+        train: Omit<Train, "timeTableRows">;
         stations: Station[];
         wagons: Wagon[];
       }

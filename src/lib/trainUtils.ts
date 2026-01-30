@@ -75,7 +75,7 @@ export const processWagons = (train: Train) => {
   return wagons;
 };
 
-export const getDescription = (wagons: Wagon[], train: Train, stations: Station[]) => {
+export const getDescription = (wagons: Wagon[], train: Omit<Train, "timeTableRows">, stations: Station[]) => {
   const totalSeats = wagons.reduce(
     (a, c) =>
       a + c.floors.reduce((a2, c2) => a2 + c2.seats.filter((s) => s.type !== "VEHICLE").length, 0),
