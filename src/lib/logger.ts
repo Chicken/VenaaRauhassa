@@ -34,13 +34,13 @@ async function uploadError(str: string) {
   return `${env.ERROR_UPLOAD_URL}/${res.key}.js`;
 }
 
-export async function error(context: Record<string, string | undefined>, error: unknown) {
+export async function error(context: Record<string, string | undefined>, error?: unknown) {
   if (!env.ERROR_WEBHOOK) return;
   const errorString = error instanceof Error ? inspect(error, { depth: null }) : String(error);
-  const errorUrl = await uploadError(errorString);
+  const errorUrl = error ? await uploadError(errorString) : null;
   const contextString = Object.entries(context)
     .filter(([, value]) => value != null)
     .map(([key, value]) => `${camelToTitleCase(key)}: ${value}`)
     .join("\n");
-  await log(contextString + "\n" + "Error: " + errorUrl);
+  await log(contextString + "\n" + (error ? "Error: " + errorUrl : ""));
 }
