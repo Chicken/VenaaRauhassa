@@ -27,17 +27,6 @@ export default function Home({
   const [selectedDate, setSelectedDate] = useState<string | null>(initialDate);
   const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
 
-  useEffect(() => {
-    // @ts-expect-error no types for globally available plausible function
-    if (window.plausible) {
-      // @ts-expect-error no types for globally available plausible function
-      // eslint-disable-next-line
-      window.plausible("pageview", {
-        u: (window.location.origin + window.location.pathname).replace(/\/\d{4}-\d{2}-\d{2}/, ""),
-      });
-    }
-  }, []);
-
   const getTrains = useCallback(
     async (date: string) => {
       setTrainsLoaded(false);

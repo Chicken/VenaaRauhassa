@@ -26,7 +26,7 @@ export const env = createEnv({
   },
   client: {
     NEXT_PUBLIC_PLAUSIBLE_SCRIPT: z.string().optional(),
-    NEXT_PUBLIC_PLAUSIBLE_DOMAIN: z.string().optional(),
+    NEXT_PUBLIC_PLAUSIBLE_ENDPOINT: z.string().optional(),
     NEXT_PUBLIC_BASE_URL: z.string().optional(),
     NEXT_PUBLIC_VERCEL_URL: z.string().optional(),
   },
@@ -49,7 +49,7 @@ export const env = createEnv({
     REQUEST_TIMEOUT: process.env.REQUEST_TIMEOUT,
     METRICS_SECRET: process.env.METRICS_SECRET,
     NEXT_PUBLIC_PLAUSIBLE_SCRIPT: process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT,
-    NEXT_PUBLIC_PLAUSIBLE_DOMAIN: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN,
+    NEXT_PUBLIC_PLAUSIBLE_ENDPOINT: process.env.NEXT_PUBLIC_PLAUSIBLE_ENDPOINT,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
   },

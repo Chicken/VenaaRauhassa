@@ -6,17 +6,22 @@ import { env } from "~/lib/env";
 const AppDocument = () => (
   <Html lang="en">
     <Head>
-      {env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT && env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? (
+      {env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT && env.NEXT_PUBLIC_PLAUSIBLE_ENDPOINT ? (
         <>
-          <script
-            defer
-            data-domain={env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
-            src={env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT}
-          ></script>
+          <script async src={env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT}></script>
           <script
             dangerouslySetInnerHTML={{
-              __html:
-                "window.plausible = window.plausible || function() {(window.plausible.q = window.plausible.q || []).push(arguments)}",
+              __html: /* javascript */ `
+                window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+                plausible.init({
+                  endpoint: "${env.NEXT_PUBLIC_PLAUSIBLE_ENDPOINT}",
+                  transformRequest: (payload) => {
+                    // double encode because this is code is in a string
+                    payload.u = payload.u.replace(/\\/\\d{4}-\\d{2}-\\d{2}/, "");
+                    return payload;
+                  },
+                });
+              `,
             }}
           ></script>
         </>
