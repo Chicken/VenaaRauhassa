@@ -11,6 +11,7 @@ import { MiniMap } from "~/components/MiniMap";
 import { SeatFinder } from "~/components/SeatFinder";
 import { SeatSlider } from "~/components/SeatSlider";
 import { WagonMap } from "~/components/WagonMap";
+import { formatShortFinnishTime } from "~/lib/dateUtilities";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { getStations } from "~/lib/digitraffic";
 import { useDraggableMap } from "~/lib/hooks/useDraggableMap";
@@ -35,6 +36,7 @@ export default function TrainPage({
   stations,
   wagons,
   maintenance,
+  fetchedAt,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   // if (process.env.NODE_ENV === "development") console.debug(state, train, stations, wagons);
 
@@ -42,6 +44,14 @@ export default function TrainPage({
   const [messageApi, messageContextHolder] = message.useMessage();
 
   const [mainMapRef, setMainMapRef] = useState<HTMLDivElement | null>(null);
+  const [fetchedMinutesAgo, setFetchedMinutesAgo] = useState<number | null>(null);
+  useEffect(() => {
+    if (fetchedAt != null) setFetchedMinutesAgo(Math.floor((Date.now() - fetchedAt) / 60_000));
+    const interval = setInterval(() => {
+      if (fetchedAt != null) setFetchedMinutesAgo(Math.floor((Date.now() - fetchedAt) / 60_000));
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchedAt]);
 
   const [timeRange, setTimeRange] = useState<number[]>(initialRange ?? [0, 0]);
   const [LModalOpen, setLModalOpen] = useState<boolean>(false);
@@ -267,6 +277,7 @@ export default function TrainPage({
           {isInComplete ? null : (
             <SeatFinder
               wagons={wagons}
+              stations={stations}
               timeRange={timeRange}
               messageApi={messageApi}
               selectedSeat={selectedSeat}
@@ -283,6 +294,19 @@ export default function TrainPage({
             /*    backgroundColor:'red' */
           }}
         >
+          {fetchedAt != null ? (
+            <p style={{ color: "#757575", fontSize: "12px", margin: "0 0 4px 0" }}>
+              Tiedot haettu:{" "}
+              {formatShortFinnishTime(fetchedAt)}
+              {" "}
+              {fetchedMinutesAgo != null ? (fetchedMinutesAgo === 0
+                ? "(juuri nyt)"
+                : fetchedMinutesAgo === 1
+                  ? "(1 minuutti sitten)"
+                  : `(${fetchedMinutesAgo} minuuttia sitten)`) : ""}
+            </p>
+          ) : null}
+
           <a
             style={{
               color: "#757575",
@@ -399,6 +423,9 @@ export const getServerSideProps = (async (context) => {
 
     const wagons = processWagons(train);
 
+    const fetchedAt =
+      getTrainOnDate.cacheTimestamp(context.params.date, context.params.train) ?? Date.now();
+
     let initialRange: number[] | null = [0, stations.length - 1];
     let initialSelectedSeat: number[] | null = null;
 
@@ -431,6 +458,7 @@ export const getServerSideProps = (async (context) => {
         date: context.params.date,
         initialRange,
         initialSelectedSeat,
+        fetchedAt,
         train: {
           trainNumber: train.trainNumber,
           trainType: train.trainType,
@@ -463,6 +491,7 @@ export const getServerSideProps = (async (context) => {
         state: "success";
         initialRange: number[];
         initialSelectedSeat: number[] | null;
+        fetchedAt: number;
         train: Omit<Train, "timeTableRows">;
         stations: Station[];
         wagons: Wagon[];

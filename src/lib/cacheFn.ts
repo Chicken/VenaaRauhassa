@@ -10,17 +10,21 @@ interface CacheEntry<T> {
   timeout: NodeJS.Timeout;
 }
 
+export type CachedFn<TFn extends AnyAsyncFn> = TFn & {
+  cacheTimestamp: (...args: Parameters<TFn>) => number | null;
+};
+
 export function cache<TFn extends AnyAsyncFn>(
   freshTimeMs: number,
   staleTimeMs: number,
   fn: TFn,
   metricsName: string
-): TFn {
-  const cache = new Map<string, CacheEntry<Awaited<ReturnType<TFn>>>>();
+): CachedFn<TFn> {
+  const cacheMap = new Map<string, CacheEntry<Awaited<ReturnType<TFn>>>>();
 
-  return ((...args: Parameters<TFn>) => {
+  const wrapped = (...args: Parameters<TFn>) => {
     const key = args.map((arg) => String(arg)).join(",");
-    const entry = cache.get(key);
+    const entry = cacheMap.get(key);
     const now = Date.now();
 
     if (entry && now - entry.timestamp < freshTimeMs) {
@@ -32,11 +36,11 @@ export function cache<TFn extends AnyAsyncFn>(
       fn(...args)
         .then((result) => {
           if (metricsName) cacheRequests.inc({ function: metricsName, status: "miss" });
-          if (cache.has(key)) clearTimeout(cache.get(key)!.timeout);
-          cache.set(key, {
+          if (cacheMap.has(key)) clearTimeout(cacheMap.get(key)!.timeout);
+          cacheMap.set(key, {
             value: result as Awaited<ReturnType<TFn>>,
             timestamp: Date.now(),
-            timeout: setTimeout(() => cache.delete(key), freshTimeMs + staleTimeMs),
+            timeout: setTimeout(() => cacheMap.delete(key), freshTimeMs + staleTimeMs),
           });
           resolve(result);
         })
@@ -62,7 +66,14 @@ export function cache<TFn extends AnyAsyncFn>(
           }
         });
     });
-  }) as TFn;
+  };
+
+  (wrapped as CachedFn<TFn>).cacheTimestamp = (...args: Parameters<TFn>): number | null => {
+    const key = args.map((arg) => String(arg)).join(",");
+    return cacheMap.get(key)?.timestamp ?? null;
+  };
+
+  return wrapped as CachedFn<TFn>;
 }
 
 export const HOUR = 60 * 60 * 1000;

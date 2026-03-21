@@ -1,4 +1,4 @@
-export function formatShortFinnishTime(date: string) {
+export function formatShortFinnishTime(date: string | number) {
   try {
     return new Date(date).toLocaleTimeString("fi-FI", {
       timeZone: "Europe/Helsinki",
