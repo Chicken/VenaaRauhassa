@@ -1,7 +1,9 @@
+import { StarFilled, StarOutlined } from "@ant-design/icons";
 import { Button, DatePicker, Select } from "antd";
 import dayjs from "dayjs";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
+import { useStickyState } from "~/lib/hooks/useStickyState";
 import type { AllTrains } from "~/types";
 
 const pickerStyle: React.CSSProperties = {
@@ -32,7 +34,16 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
   allTrains,
 }) => {
   const [trainLoading, setTrainLoading] = useState<boolean>(false);
+  const [favorites, setFavorites] = useStickyState<string[]>("trainFavorites", []);
   const router = useRouter();
+
+  const toggleFavorite = (value: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setFavorites((prev) =>
+      prev.includes(value) ? prev.filter((f) => f !== value) : [...prev, value]
+    );
+  };
 
   return (
     <>
@@ -83,12 +94,38 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
             terms.some((term: string) => term.toLowerCase().includes(keyword.toLowerCase()))
           );
         }}
-        filterSort={(optionA, optionB) =>
-          parseInt(String(optionA.value ?? 0)) - parseInt(String(optionB.value ?? 0))
-        }
+        filterSort={(optionA, optionB) => {
+          const aFav = favorites.includes(String(optionA.value ?? ""));
+          const bFav = favorites.includes(String(optionB.value ?? ""));
+          if (aFav && !bFav) return -1;
+          if (!aFav && bFav) return 1;
+          return parseInt(String(optionA.value ?? 0)) - parseInt(String(optionB.value ?? 0));
+        }}
         virtual={false}
         dropdownRender={(menu) => <div style={{ maxHeight: 250, overflow: "auto" }}>{menu}</div>}
         options={allTrains}
+        optionRender={(option) => {
+          const isFav = favorites.includes(String(option.value));
+          return (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>{option.label}</span>
+              <span
+                onClick={(e) => toggleFavorite(String(option.value), e)}
+                style={{
+                  cursor: "pointer",
+                  color: isFav ? "#fadb14" : "#bbb",
+                  flexShrink: 0,
+                  paddingLeft: "8px",
+                  fontSize: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                {isFav ? <StarFilled /> : <StarOutlined />}
+              </span>
+            </div>
+          );
+        }}
       />
 
       <Button
