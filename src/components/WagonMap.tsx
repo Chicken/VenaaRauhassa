@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 // @ts-expect-error no types exists
 import { SvgLoader, SvgProxy } from "react-svgmt";
-import { hueShift } from "~/lib/colors";
+import { hueShift, interpolateColorViaMid } from "~/lib/colors";
 import { getSeatSelector } from "~/lib/seatUtils";
 import type { Station, Wagon } from "~/types";
 
@@ -11,6 +11,7 @@ type WagonMapProps = {
   timeRange: number[];
   selectedSeat: number[] | null;
   heatmapEnabled: boolean;
+  colorblindMode: boolean;
   setMainMapRef: (ref: HTMLDivElement | null) => void;
 };
 
@@ -20,6 +21,7 @@ export const WagonMap: React.FC<WagonMapProps> = ({
   timeRange,
   selectedSeat,
   heatmapEnabled,
+  colorblindMode,
   setMainMapRef,
 }) => {
   const travelTimes = useMemo(
@@ -159,6 +161,13 @@ export const WagonMap: React.FC<WagonMapProps> = ({
                       fill={(() => {
                         if (allUnavailable) return "#45475a";
                         if (statusRange.includes("unavailable")) return "#9399b2";
+                        if (colorblindMode) {
+                          if (allReserved) return "#D55E00";
+                          if (allOpen) return "#356ed4";
+                          if (heatmapEnabled)
+                            return interpolateColorViaMid("#356ed4", "#F0E442", "#D55E00", occupiedTime / totalTime);
+                          return "#F0E442";
+                        }
                         if (allReserved) return "#f38ba8";
                         if (allOpen) return "#a6e3a1";
                         if (heatmapEnabled)
@@ -168,6 +177,7 @@ export const WagonMap: React.FC<WagonMapProps> = ({
                       stroke={(() => {
                         if (isSelected) return "#313244";
                         if (special) return "#820909";
+                        if (colorblindMode) return "#313244";
                         return "#1b50af";
                       })()}
                       stroke-width={(() => {
@@ -184,6 +194,13 @@ export const WagonMap: React.FC<WagonMapProps> = ({
                     />,
                   ];
 
+                  proxies.push(
+                    <SvgProxy
+                      key={seat.number + "-seat-number-1"}
+                      selector={"#seatnumber_" + seat.number}
+                      fill={colorblindMode ? "#000" : "rgb(27, 80, 175)"}
+                    />
+                  );
                   if (pet || petCoach) {
                     proxies.push(
                       <SvgProxy
@@ -204,7 +221,7 @@ export const WagonMap: React.FC<WagonMapProps> = ({
                         <SvgProxy
                           key={seat.number + "-seat-number-2"}
                           selector={"#seatnumber_" + seat.number + "-with-service-icon"}
-                          fill="rgb(27, 80, 175)"
+                          fill={colorblindMode ? "#000" : "rgb(27, 80, 175)"}
                         />
                       );
                     }

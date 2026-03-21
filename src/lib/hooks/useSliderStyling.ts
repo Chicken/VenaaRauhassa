@@ -6,7 +6,8 @@ export const useSliderStyling = (
   selectedSeat: number[] | null,
   wagons: Wagon[] | undefined,
   isInComplete: boolean,
-  missingRanges: boolean[]
+  missingRanges: boolean[],
+  colorblindMode: boolean
 ) => {
   useEffect(() => {
     const [leftHandle, rightHandle] = [...document.querySelectorAll(".ant-slider-handle")] as [
@@ -46,8 +47,8 @@ export const useSliderStyling = (
         ? {
             missing: "#45475a",
             unavailable: "#9399b2",
-            reserved: "#f38ba8",
-            open: "#a6e3a1",
+            reserved: colorblindMode ? "#D55E00" : "#f38ba8",
+            open: colorblindMode ? "#356ed4" : "#a6e3a1",
           }[seat.status[i + timeRange[0]!]!]
         : isInComplete && missingRanges.slice(timeRange[0], timeRange[1])[i]
         ? "#45475a"
@@ -68,5 +69,5 @@ export const useSliderStyling = (
 
     const sliderEl = document.getElementsByClassName("ant-slider-track-1")[0] as HTMLElement;
     if (sliderEl) sliderEl.style.background = styleStr;
-  }, [timeRange, selectedSeat, wagons, isInComplete, missingRanges]);
+  }, [timeRange, selectedSeat, wagons, isInComplete, missingRanges, colorblindMode]);
 };

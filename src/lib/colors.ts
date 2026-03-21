@@ -1,9 +1,18 @@
 export type HUE = { h: number; s: number; l: number };
 
+function rgbFromHex(hex: string): [number, number, number] {
+  return [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+}
+
 export function rgbHexToHSL(hex: string): HUE {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const [r255, g255, b255] = rgbFromHex(hex);
+  const r = r255 / 255;
+  const g = g255 / 255;
+  const b = b255 / 255;
 
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
@@ -76,4 +85,19 @@ export function hueShift(hex: string, hueAmount: number): string {
   if (hsl.h > 360) hsl.h -= 360;
   else if (hsl.h < 0) hsl.h += 360;
   return hslToRgbHex(hsl);
+}
+
+export function interpolateColor(from: string, to: string, t: number): string {
+  const [r1, g1, b1] = rgbFromHex(from);
+  const [r2, g2, b2] = rgbFromHex(to);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+export function interpolateColorViaMid(from: string, mid: string, to: string, t: number): string {
+  return t < 0.5
+    ? interpolateColor(from, mid, t * 2)
+    : interpolateColor(mid, to, (t - 0.5) * 2);
 }

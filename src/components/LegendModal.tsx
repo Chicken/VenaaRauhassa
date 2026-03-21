@@ -40,11 +40,15 @@ export const LegendModal = ({
   setIsOpen,
   heatmapEnabled,
   setHeatmapEnabled,
+  colorblindMode,
+  setColorblindMode,
 }: {
   IsOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
   heatmapEnabled: boolean;
   setHeatmapEnabled: Dispatch<SetStateAction<boolean>>;
+  colorblindMode: boolean;
+  setColorblindMode: Dispatch<SetStateAction<boolean>>;
 }) => {
   const handleOk = () => {
     setIsOpen(false);
@@ -68,8 +72,19 @@ export const LegendModal = ({
           borderColor={"#820909"}
           text={"Erikoispaikka (ekstra, ravintolavaunu, hytti, eläin)"}
         />
-        <LegendItem bgColor={"#a6e3a1"} text={"Paikka vapaa"} />
-        {heatmapEnabled ? (
+        <LegendItem
+          bgColor={colorblindMode ? "#0072B2" : "#a6e3a1"}
+          text={"Paikka vapaa"}
+        />
+        {colorblindMode && heatmapEnabled ? (
+          <LegendItem
+            bgGradient
+            bgColor="linear-gradient(180deg, #D55E00, #F0E442, #356ed4)"
+            text={"Paikka osittain varattu valitulle matkalle"}
+          />
+        ) : colorblindMode ? (
+          <LegendItem bgColor={"#F0E442"} text={"Paikka osittain varattu valitulle matkalle"} />
+        ) : heatmapEnabled ? (
           <LegendItem
             bgGradient
             bgColor="linear-gradient(180deg, #f38ba8, #f9e2af, #a6e3a1)"
@@ -79,7 +94,10 @@ export const LegendModal = ({
           <LegendItem bgColor={"#f9e2af"} text={"Paikka osittain varattu valitulle matkalle"} />
         )}
 
-        <LegendItem bgColor={"#f38ba8"} text={"Paikka varattu valitulle matkalle"} />
+        <LegendItem
+          bgColor={colorblindMode ? "#D55E00" : "#f38ba8"}
+          text={"Paikka varattu valitulle matkalle"}
+        />
         <LegendItem bgColor={"#9399b2"} text={"Paikan vaunu ei kulje määränpäähän saakka"} />
         <LegendItem bgColor={"#45475a"} text={"Välin haussa tapahtui ongelmia (aikajana)"} />
         <LegendItem bgColor={"#45475a"} text={"Paikka ei saatavilla (kartta)"} />
@@ -95,6 +113,15 @@ export const LegendModal = ({
                 window.plausible("Change Map Type", { props: { heatmapEnabled: !heatmapEnabled } });
               }
               setHeatmapEnabled((s) => !s);
+            }}
+          />
+        </p>
+        <p>
+          Värisokeusystävälliset värit:&nbsp;
+          <Switch
+            checked={colorblindMode}
+            onChange={() => {
+              setColorblindMode((s) => !s);
             }}
           />
         </p>

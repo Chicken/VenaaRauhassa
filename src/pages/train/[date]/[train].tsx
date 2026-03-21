@@ -52,6 +52,7 @@ export default function TrainPage({
   const [selectedSeat, setSelectedSeat] = useState<number[] | null>(initialSelectedSeat ?? null);
 
   const [heatmapEnabled, setHeatmapEnabled] = useStickyState("heatmapEnabled", true);
+  const [colorblindMode, setColorblindMode] = useStickyState("colorblindMode", false);
 
   useSyncUrlState(router, train, stations, timeRange, selectedSeat);
 
@@ -78,7 +79,7 @@ export default function TrainPage({
 
   const { changeSeatSelection } = useSeatSelection(mainMapRef, setSelectedSeat);
 
-  useSliderStyling(timeRange, selectedSeat, wagons, isInComplete, missingRanges);
+  useSliderStyling(timeRange, selectedSeat, wagons, isInComplete, missingRanges, colorblindMode);
 
   useEffect(() => {
     router.prefetch(date ? `/?date=${date}` : "/").catch(console.error);
@@ -252,6 +253,7 @@ export default function TrainPage({
             timeRange={timeRange}
             selectedSeat={selectedSeat}
             heatmapEnabled={heatmapEnabled}
+            colorblindMode={colorblindMode}
             setMainMapRef={setMainMapRef}
           />
 
@@ -334,6 +336,8 @@ export default function TrainPage({
         setIsOpen={setLModalOpen}
         heatmapEnabled={heatmapEnabled}
         setHeatmapEnabled={setHeatmapEnabled}
+        colorblindMode={colorblindMode}
+        setColorblindMode={setColorblindMode}
       />
     </>
   );
