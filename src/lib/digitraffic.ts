@@ -13,6 +13,10 @@ const stationResponseSchema = z.array(
 
 export const digitrafficUser = "VenaaRauhassa";
 
+const stationOverrides = {
+  PNÄ: "Pietarsaari",
+};
+
 export const getStations = cache(12 * HOUR, 24 * HOUR, async () => {
   const res = await getJSON("https://rata.digitraffic.fi/api/v1/metadata/stations", {
     "Digitraffic-User": digitrafficUser,
@@ -20,6 +24,7 @@ export const getStations = cache(12 * HOUR, 24 * HOUR, async () => {
   const data = stationResponseSchema.parse(res);
   const filteredData = data.filter((s) => s.passengerTraffic);
   const stations = Object.fromEntries(filteredData.map((s) => [s.stationShortCode, s.stationName]));
+  for (const [shortCode, name] of Object.entries(stationOverrides)) stations[shortCode] = name;
   return stations;
 }, "getStations");
 
