@@ -1,10 +1,11 @@
 import { Button } from "antd";
 import type { MessageInstance } from "antd/lib/message/interface";
 import React from "react";
-import type { Floor, Seat, Wagon } from "~/types";
+import type { Floor, Seat, Station, Wagon } from "~/types";
 
 type SeatFinderProps = {
   wagons: Wagon[];
+  stations: Station[];
   timeRange: number[];
   messageApi: MessageInstance;
   selectedSeat: number[] | null;
@@ -13,6 +14,7 @@ type SeatFinderProps = {
 
 export const SeatFinder: React.FC<SeatFinderProps> = ({
   wagons,
+  stations,
   timeRange,
   messageApi,
   selectedSeat,
@@ -30,6 +32,18 @@ export const SeatFinder: React.FC<SeatFinderProps> = ({
         // eslint-disable-next-line
         if (window.plausible) window.plausible("Find Seat");
 
+        const travelTimes = stations
+          .map((station, idx, arr) => {
+            if (idx === arr.length - 1) return 0;
+            return (
+              (arr[idx + 1]?.arrivalTime ?? arr[idx + 1]?.departureTime)! -
+              (station.departureTime ?? station.arrivalTime)!
+            );
+          })
+          .slice(0, -1);
+
+        const travelTimeRange = travelTimes.slice(timeRange[0], timeRange[1]);
+
         function getSeatGroup(floor: Floor, seat: Seat): Seat[] {
           if (seat.services.includes("OPPOSITE")) {
             const seatsInSection = floor.seats.filter(
@@ -46,15 +60,17 @@ export const SeatFinder: React.FC<SeatFinderProps> = ({
 
         function groupScore(group: Seat[]) {
           if (!group.length) return 1;
-          // TODO: should probably use time occupied instead of just stations
           return (
-            group.reduce(
-              (a, c) =>
-                a +
-                c.status.slice(timeRange[0], timeRange[1]).filter((s) => s === "open").length /
-                  c.status.length,
-              0
-            ) / group.length
+            group.reduce((a, c) => {
+              const statusRange = c.status.slice(timeRange[0], timeRange[1]);
+              const totalTime = travelTimeRange
+                .filter((_, i) => statusRange[i] !== "missing")
+                .reduce((a, c) => a + c, 0);
+              const openTime = travelTimeRange
+                .filter((_, i) => statusRange[i] === "open")
+                .reduce((a, c) => a + c, 0);
+              return a + (totalTime > 0 ? openTime / totalTime : 1);
+            }, 0) / group.length
           );
         }
 
