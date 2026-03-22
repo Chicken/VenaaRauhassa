@@ -1,7 +1,8 @@
-import React from "react";
 import { Slider } from "antd";
-import type { Station, Wagon } from "~/types";
 import dayjs from "dayjs";
+import React from "react";
+import { useMediaQuery } from "react-responsive";
+import type { Station, Wagon } from "~/types";
 
 type SeatSliderProps = {
   stations: Station[];
@@ -18,6 +19,23 @@ export const SeatSlider: React.FC<SeatSliderProps> = ({
   wagons,
   setTimeRange,
 }) => {
+  const seat = selectedSeat
+    ? wagons
+        .find((w) => w.number === selectedSeat[0])!
+        .floors.flatMap((f) => f.seats)
+        .find((s) => s.number === selectedSeat[1])!
+    : null;
+
+  const isMobile = useMediaQuery({
+    maxWidth: 768,
+  });
+
+  const maxNameLen = Math.max(...stations.map((s) => s.station.replace(" asema", "").length));
+  const labelWidth = Math.max(maxNameLen * 8, 80);
+  const singleRowWidth = stations.length * labelWidth;
+  const needsAlternation = isMobile || singleRowWidth > 900;
+  const computedMinWidth = Math.max(400, needsAlternation ? Math.ceil(stations.length / 2) * labelWidth : singleRowWidth);
+
   return (
     <Slider
       range
@@ -41,20 +59,14 @@ export const SeatSlider: React.FC<SeatSliderProps> = ({
       }}
       marks={Object.fromEntries(
         stations.map((station, i) => {
-          const seat = selectedSeat
-            ? wagons
-                .find((w) => w.number === selectedSeat[0])!
-                .floors.flatMap((f) => f.seats)
-                .find((s) => s.number === selectedSeat[1])!
-            : null;
-
           const stationName = station.station.replace(" asema", "");
+          const color = seat?.status[i] === "unavailable" ? "grey" : "unset";
           return [
             i,
             <div
               key={station.stationShortCode}
               style={{
-                marginTop: i % 2 === 1 ? "15px" : "5px",
+                marginTop: needsAlternation && i % 2 === 1 ? "55px" : "5px",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -62,20 +74,22 @@ export const SeatSlider: React.FC<SeatSliderProps> = ({
             >
               <p
                 style={{
-                  width: "fit-content",
-                  color: seat?.status[i] === "unavailable" ? "grey" : "unset",
+                  color,
                   fontSize: "max(12px, min(18px, calc(8px + 0.5vw)))",
                   margin: "0px",
+                  width: "fit-content",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {i % 2 === 1 ? <br /> : ""}
                 {stationName}
               </p>
               <p
                 style={{
-                  color: seat?.status[i] === "unavailable" ? "grey" : "unset",
+                  color,
                   fontSize: "max(10px, min(16px, calc(4px + 0.5vw)))",
                   margin: "0px",
+                  width: "fit-content",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {station.arrivalTime && dayjs(station.arrivalTime).format("HH:mm")}
@@ -88,8 +102,8 @@ export const SeatSlider: React.FC<SeatSliderProps> = ({
       )}
       style={{
         margin: "auto",
-        marginBottom: "60px",
-        minWidth: "500px",
+        marginBottom: needsAlternation ? "90px" : "40px",
+        minWidth: `${computedMinWidth}px`,
         maxWidth: "90%",
       }}
     />
