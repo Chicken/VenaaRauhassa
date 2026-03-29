@@ -1,4 +1,5 @@
 import { env } from "~/lib/env";
+import { rateLimitRequests } from "~/lib/metrics";
 import type { IncomingMessage } from "http";
 
 const store = new Map<string, { count: number; resetAt: number }>();
@@ -42,14 +43,17 @@ export function checkRateLimit(ip: string): number | null {
 
   if (!entry || now >= entry.resetAt) {
     store.set(ip, { count: 1, resetAt: now + env.RATE_LIMIT_WINDOW_MS });
+    rateLimitRequests.inc({ status: "allowed" });
     return null;
   }
 
   if (entry.count >= env.RATE_LIMIT_MAX) {
+    rateLimitRequests.inc({ status: "limited" });
     return Math.ceil((entry.resetAt - now) / 1000);
   }
 
   entry.count++;
+  rateLimitRequests.inc({ status: "allowed" });
   return null;
 }
 

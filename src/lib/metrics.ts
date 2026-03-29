@@ -45,3 +45,12 @@ export const sessionUpdates =
     labelNames: ["type", "reason"],
     registers: [registry],
   });
+
+export const rateLimitRequests =
+  (registry.getSingleMetric("rate_limit_requests_total") as Counter<string>) ||
+  new Counter({
+    name: "rate_limit_requests_total",
+    help: "Total number of requests checked against rate limiting",
+    labelNames: ["status"],
+    registers: [registry],
+  });
