@@ -23,6 +23,18 @@ export const env = createEnv({
       .default("5000")
       .transform((val) => parseInt(val, 10)), // in milliseconds
     METRICS_SECRET: z.string().optional(),
+    RATE_LIMIT_MAX: z
+      .string()
+      .default("30")
+      .transform((val) => parseInt(val, 10)), // max requests per window
+    RATE_LIMIT_WINDOW_MS: z
+      .string()
+      .default("60000")
+      .transform((val) => parseInt(val, 10)), // window duration in milliseconds
+    RATE_LIMIT_IPV6_PREFIX: z
+      .string()
+      .default("64")
+      .transform((val) => parseInt(val, 10)), // IPv6 subnet prefix length for grouping (e.g. 64 = /64)
   },
   client: {
     NEXT_PUBLIC_PLAUSIBLE_SCRIPT: z.string().optional(),
@@ -48,6 +60,9 @@ export const env = createEnv({
     MAINTENANCE_MODE: process.env.MAINTENANCE_MODE,
     REQUEST_TIMEOUT: process.env.REQUEST_TIMEOUT,
     METRICS_SECRET: process.env.METRICS_SECRET,
+    RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX,
+    RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
+    RATE_LIMIT_IPV6_PREFIX: process.env.RATE_LIMIT_IPV6_PREFIX,
     NEXT_PUBLIC_PLAUSIBLE_SCRIPT: process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT,
     NEXT_PUBLIC_PLAUSIBLE_ENDPOINT: process.env.NEXT_PUBLIC_PLAUSIBLE_ENDPOINT,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,

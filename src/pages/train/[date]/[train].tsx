@@ -8,12 +8,14 @@ import { ZodError } from "zod";
 import { ErrorComponent } from "~/components/ErrorComponent";
 import { LegendModal } from "~/components/LegendModal";
 import { MiniMap } from "~/components/MiniMap";
+import { RateLimitedComponent } from "~/components/RateLimitedComponent";
 import { SeatFinder } from "~/components/SeatFinder";
 import { SeatSlider } from "~/components/SeatSlider";
 import { WagonMap } from "~/components/WagonMap";
 import { formatShortFinnishTime } from "~/lib/dateUtilities";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { getStations } from "~/lib/digitraffic";
+import { env } from "~/lib/env";
 import { useDraggableMap } from "~/lib/hooks/useDraggableMap";
 import { useSeatScroll } from "~/lib/hooks/useSeatScroll";
 import { useSeatSelection } from "~/lib/hooks/useSeatSelection";
@@ -21,6 +23,7 @@ import { useSliderStyling } from "~/lib/hooks/useSliderStyling";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import { useSyncUrlState } from "~/lib/hooks/useSyncUrlState";
 import { error } from "~/lib/logger";
+import { checkRateLimit, getIp, getRemainingRateLimit } from "~/lib/rateLimit";
 import { getDescription, processStations, processWagons } from "~/lib/trainUtils";
 import { getTrainOnDate } from "~/lib/vr";
 import type { Station, Train, Wagon } from "~/types";
@@ -37,6 +40,7 @@ export default function TrainPage({
   wagons,
   maintenance,
   fetchedAt,
+  retryAfter,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   // if (process.env.NODE_ENV === "development") console.debug(state, train, stations, wagons);
 
@@ -110,6 +114,10 @@ export default function TrainPage({
         date={date}
       />
     );
+  }
+
+  if (state === "rate-limited") {
+    return <RateLimitedComponent retryAfter={retryAfter} date={date} />;
   }
 
   if (state === "invalid-params") {
@@ -296,14 +304,14 @@ export default function TrainPage({
         >
           {fetchedAt != null ? (
             <p style={{ color: "#757575", fontSize: "12px", margin: "0 0 4px 0" }}>
-              Tiedot haettu:{" "}
-              {formatShortFinnishTime(fetchedAt)}
-              {" "}
-              {fetchedMinutesAgo != null ? (fetchedMinutesAgo === 0
-                ? "(juuri nyt)"
-                : fetchedMinutesAgo === 1
+              Tiedot haettu: {formatShortFinnishTime(fetchedAt)}{" "}
+              {fetchedMinutesAgo != null
+                ? fetchedMinutesAgo === 0
+                  ? "(juuri nyt)"
+                  : fetchedMinutesAgo === 1
                   ? "(1 minuutti sitten)"
-                  : `(${fetchedMinutesAgo} minuuttia sitten)`) : ""}
+                  : `(${fetchedMinutesAgo} minuuttia sitten)`
+                : ""}
             </p>
           ) : null}
 
@@ -403,6 +411,23 @@ export const getServerSideProps = (async (context) => {
       },
     };
   }
+
+  const cachedAt = getTrainOnDate.cacheTimestamp(context.params.date, context.params.train);
+  const isCacheMiss = cachedAt === null || Date.now() - cachedAt >= getTrainOnDate.freshTimeMs;
+  if (isCacheMiss) {
+    const retryAfter = checkRateLimit(getIp(context.req));
+    if (retryAfter !== null) {
+      context.res.statusCode = 429;
+      context.res.setHeader("Retry-After", String(retryAfter));
+      context.res.setHeader("X-RateLimit-Limit", String(env.RATE_LIMIT_MAX));
+      context.res.setHeader("X-RateLimit-Remaining", "0");
+      return { props: { state: "rate-limited", retryAfter, date: context.params.date } };
+    }
+  }
+  const remaining = getRemainingRateLimit(getIp(context.req));
+  context.res.setHeader("X-RateLimit-Limit", String(env.RATE_LIMIT_MAX));
+  context.res.setHeader("X-RateLimit-Remaining", String(remaining.remaining));
+  context.res.setHeader("X-RateLimit-Reset", String(Math.ceil(remaining.resetAt / 1000)));
 
   try {
     const [train, allStations] = await Promise.all([
@@ -508,6 +533,10 @@ export const getServerSideProps = (async (context) => {
     | {
         state: "error";
         maintenance?: boolean;
+      }
+    | {
+        state: "rate-limited";
+        retryAfter: number;
       }
   ) & { date?: string }
 >;

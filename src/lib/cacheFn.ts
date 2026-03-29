@@ -12,6 +12,7 @@ interface CacheEntry<T> {
 
 export type CachedFn<TFn extends AnyAsyncFn> = TFn & {
   cacheTimestamp: (...args: Parameters<TFn>) => number | null;
+  freshTimeMs: number;
 };
 
 export function cache<TFn extends AnyAsyncFn>(
@@ -72,6 +73,8 @@ export function cache<TFn extends AnyAsyncFn>(
     const key = args.map((arg) => String(arg)).join(",");
     return cacheMap.get(key)?.timestamp ?? null;
   };
+
+  (wrapped as CachedFn<TFn>).freshTimeMs = freshTimeMs;
 
   return wrapped as CachedFn<TFn>;
 }
