@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const jokes = [
+const messages = [
+  // Jokes
   '"Ilman vieruskaveria"',
   '"Koska tässä kestää..."',
   '"Noniin ja Kokkolasta lähdettiin noin 45 minuuttia myöhässä. Syynä oli junakohtaukset ja rautatieongelmat"',
@@ -15,6 +16,29 @@ const jokes = [
   '"Hyvät matkustajat, veturi on tulessa, poistukaa junasta rauhallisesti"',
   '"Juna on osallistunut autokolariin"',
   '"Ratavaurion vuoksi raiteet ovat sähköisesti varautuneet"',
+  '"Junaliikenne on keskeytetty poliisioperaation vuoksi"',
+  '"Sillä talvi yllätti, taas kerran"',
+  '"Rataa ei ole hiekoitettu riittävästi"',
+  // Call to action
+  'Annathan palautetta sivun alaosassa!',
+  'Kerro palvelusta kaverille!',
+  'Jaa tämä kikka sosiaalisessa mediassa!',
+  // Trivia
+  'Oman lipun paikalla ei ole pakko istua, mutta se on suositeltavaa!',
+  'Tuntuuko siltä, että kartta on väärin? VR voi kytkeä vaunun väärinpäin junaan!',
+  'Tiesitkö, että pääradalla vaunu numero yksi on Helsinkiä kohti?',
+  'Turun tunnin junan hinta oli noin kolme miljardia euroa!',
+  'Tiesitkö, että VenaaRauhassa on mainittu VR:n sisäisessä dokumentaatiossa?',
+  'Tiesitkö, että päärata on Helsinki - Oulu?',
+  // Developer opinions
+  'Pääradan yksikaistaisuus on junaliikenteen hirveimpiä pullonkauloja',
+  'Jos junaverkko toimii, ihmeitä on tapahtunut',
+  'VenaaRauhassa on alhaalla vain jos VR:n tai Digitrafficin rajapinnat eivät toimi',
+  // Statistics
+  'Kotimaan kaukoliikenteessä tehtiin noin 15 miljoonaa matkaa vuonna 2024',
+  'VenaaRauhassa palvelua käytetään kuukausittain noin 20 000 kertaa',
+  'Noin prosentti VR:n matkoista hyödyntää VenaaRauhassa palvelua',
+  'Suosituimmat junat ovat: IC25, IC28, ja IC27. Kaikki Helsinki - Rovaniemi väliä kulkevia!'
 ];
 
 type HeaderProps = {
@@ -22,9 +46,9 @@ type HeaderProps = {
 };
 
 export const Header: React.FC<HeaderProps> = ({ maintenance }) => {
-  const [joke, setJoke] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => setJoke(jokes[Math.floor(Math.random() * jokes.length)]!), []);
+  useEffect(() => setMessage(messages[Math.floor(Math.random() * messages.length)]!), []);
 
   return (
     <>
@@ -47,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({ maintenance }) => {
           textAlign: "center",
         }}
       >
-        {joke}
+        {message}
       </p>
       <br />
 

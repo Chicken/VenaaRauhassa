@@ -8,8 +8,11 @@ import { FeedbackModal } from "~/components/FeedbackModal";
 import { Footer } from "~/components/Footer";
 import { Header } from "~/components/Header";
 import { TrainSelector } from "~/components/TrainSelector";
+import { WelcomeModal } from "~/components/WelcomeModal";
 import { getBaseURL, isInMaintenance } from "~/lib/deployment";
 import { getInitialTrains } from "~/lib/digitraffic";
+import { useMounted } from "~/lib/hooks/useMounted";
+import { useStickyState } from "~/lib/hooks/useStickyState";
 
 export default function Home({
   initialDate,
@@ -19,10 +22,14 @@ export default function Home({
   const router = useRouter();
   const [messageApi, messageContextHolder] = message.useMessage();
 
+  const mounted = useMounted();
+
   const [allTrains, setAllTrains] = useState(initialTrains);
   const [trainsLoaded, setTrainsLoaded] = useState<boolean>(true);
 
   const [isFbModalOpen, setIsFbModalOpen] = useState<boolean>(false);
+  const [welcomeShown, setWelcomeShown] = useStickyState("welcomeShown", false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<string | null>(initialDate);
   const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
@@ -98,6 +105,13 @@ export default function Home({
 
       {messageContextHolder}
       <FeedbackModal isFbModalOpen={isFbModalOpen} setIsFbModalOpen={setIsFbModalOpen} />
+      <WelcomeModal
+        open={welcomeOpen}
+        onClose={() => {
+          setWelcomeOpen(false);
+          setWelcomeShown(true);
+        }}
+      />
 
       <div className="frontpage">
         <div className="content">
@@ -115,10 +129,28 @@ export default function Home({
               trainsLoaded={trainsLoaded}
               allTrains={allTrains}
             />
+            {mounted && !welcomeShown && (
+              <a
+                style={{ color: "#757575", textDecoration: "underline" }}
+                onClick={() => {
+                  // @ts-expect-error no types for globally available plausible function
+                  // eslint-disable-next-line
+                  if (window.plausible) window.plausible("Welcome Modal Viewed");
+                  setWelcomeOpen(true)
+                }}
+              >
+                Uusi täällä? Lue infoteksti!
+              </a>
+            )}
           </div>
         </div>
 
-        <Footer setIsFbModalOpen={setIsFbModalOpen} />
+        <Footer setIsFbModalOpen={setIsFbModalOpen} onInfoClick={() => {
+            // @ts-expect-error no types for globally available plausible function
+            // eslint-disable-next-line
+            if (window.plausible) window.plausible("Welcome Modal Viewed");
+            setWelcomeOpen(true)
+          }} />
       </div>
     </>
   );

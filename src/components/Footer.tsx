@@ -3,9 +3,10 @@ import React, { type SetStateAction } from "react";
 
 type FooterProps = {
   setIsFbModalOpen: (value: SetStateAction<boolean>) => void;
+  onInfoClick: () => void;
 };
 
-export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
+export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen, onInfoClick }) => {
   return (
     <div className="footer">
       <Button
@@ -21,14 +22,19 @@ export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen }) => {
       </Button>
 
       <p style={{ color: "#757575" }}>
-        Tämä on{" "}
+        <a
+          style={{ color: "#757575", textDecoration: "underline", cursor: "pointer" }}
+          onClick={onInfoClick}
+        >
+          Mikä palvelun tarkoitus on?
+        </a>{" "}
+        - VenaaRauhassa on{" "}
         <a
           style={{ color: "#757575", textDecoration: "underline" }}
           href="https://github.com/Chicken/VenaaRauhassa"
         >
-          avoimen lähdekoodin
-        </a>{" "}
-        projekti
+          avointa lähdekoodia
+        </a>
       </p>
 
       <a
