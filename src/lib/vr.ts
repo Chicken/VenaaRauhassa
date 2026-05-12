@@ -73,7 +73,7 @@ async function vrLogin(username: string, password: string) {
   if (typeof loginInitRes.data !== "string") throw new Error("Login init response was not text");
   const auth0Config = auth0ConfigSchema.parse(
     JSON.parse(
-      Buffer.from(loginInitRes.data.split(' = "')[1]?.split('"')[0] ?? "", "base64").toString(
+      Buffer.from(loginInitRes.data.split('data-auth0config="')[1]?.split('"')[0] ?? "", "base64").toString(
         "utf-8"
       )
     )
