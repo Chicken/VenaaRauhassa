@@ -81,7 +81,7 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
           if (!option) return false;
 
           const terms = [
-            option.label,
+            option.label.split(" ")[0] ?? "",
             option.arrivalStationName,
             option.arrivalStationShortCode,
             option.departureStationName,
