@@ -30,6 +30,7 @@ const messages = [
   'Turun tunnin junan hinta oli noin kolme miljardia euroa!',
   'Tiesitkö, että VenaaRauhassa on mainittu VR:n sisäisessä dokumentaatiossa?',
   'Tiesitkö, että päärata on Helsinki - Oulu?',
+  'Lehdestä tuttu, suomalaisten rakastama',
   // Developer opinions
   'Pääradan yksikaistaisuus on junaliikenteen hirveimpiä pullonkauloja',
   'Jos junaverkko toimii, ihmeitä on tapahtunut',
@@ -72,10 +73,6 @@ export const Header: React.FC<HeaderProps> = ({ maintenance }) => {
         }}
       >
         {message}
-      </p>
-
-      <p>
-        Hei, palvelussa on nyt tosi paljon ruuhkaa, jonka takia junahaut voivat epäonnistua. Pahoittelen tilannetta.
       </p>
       <br />
 
