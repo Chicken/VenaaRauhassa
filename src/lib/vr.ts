@@ -308,7 +308,7 @@ const trainResponseSchema = z.array(
   })
 );
 
-export const getTrainOnDate = cache(15 * MINUTE, 2 * HOUR, async (date: string, trainNumber: string) => {
+export const getTrainOnDate = cache(30 * MINUTE, 2 * HOUR, async (date: string, trainNumber: string) => {
   const res = await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`, {
     "Digitraffic-User": digitrafficUser,
   });

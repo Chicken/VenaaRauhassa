@@ -74,6 +74,10 @@ export const Header: React.FC<HeaderProps> = ({ maintenance }) => {
       >
         {message}
       </p>
+
+      <p>
+        Hei, palvelussa on nyt tosi paljon ruuhkaa, jonka takia junahaut voivat epäonnistua. Pahoittelen tilannetta.
+      </p>
       <br />
 
       {maintenance && (
