@@ -1,6 +1,5 @@
 import { env } from "~/lib/env";
 import { rateLimitRequests } from "~/lib/metrics";
-import type { IncomingMessage } from "http";
 
 const store = new Map<string, { count: number; resetAt: number }>();
 
@@ -27,12 +26,11 @@ function truncateIPv6ToSubnet(addr: string, prefixLength: number): string {
     .join(":");
 }
 
-export function getIp(req: IncomingMessage): string {
-  const forwarded = req.headers["x-forwarded-for"];
+export function getIp(headers: Pick<Headers, "get">): string {
+  const forwarded = headers.get("x-forwarded-for");
   const raw =
-    (forwarded
-      ? (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",")[0]?.trim()
-      : (req.headers["x-real-ip"] as string | undefined)) ?? "unknown";
+    (forwarded ? forwarded.split(",")[0]?.trim() : (headers.get("x-real-ip") ?? undefined)) ??
+    "unknown";
   return raw.includes(":") ? truncateIPv6ToSubnet(raw, env.RATE_LIMIT_IPV6_PREFIX) : raw;
 }
 
@@ -55,18 +53,4 @@ export function checkRateLimit(ip: string): number | null {
   entry.count++;
   rateLimitRequests.inc({ status: "allowed" });
   return null;
-}
-
-export function getRemainingRateLimit(ip: string): { remaining: number; resetAt: number } {
-  const now = Date.now();
-  const entry = store.get(ip);
-
-  if (!entry || now >= entry.resetAt) {
-    return { remaining: env.RATE_LIMIT_MAX, resetAt: Date.now() + env.RATE_LIMIT_WINDOW_MS };
-  }
-
-  return {
-    remaining: Math.max(env.RATE_LIMIT_MAX - entry.count, 0),
-    resetAt: entry.resetAt,
-  };
 }

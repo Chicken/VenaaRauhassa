@@ -1,7 +1,7 @@
 import { StarFilled, StarOutlined } from "@ant-design/icons";
 import { Button, DatePicker, Select } from "antd";
 import dayjs from "dayjs";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import type { AllTrains } from "~/types";
@@ -102,7 +102,7 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
           return parseInt(String(optionA.value ?? 0)) - parseInt(String(optionB.value ?? 0));
         }}
         virtual={false}
-        dropdownRender={(menu) => <div style={{ maxHeight: 250, overflow: "auto" }}>{menu}</div>}
+        popupRender={(menu) => <div style={{ maxHeight: 250, overflow: "auto" }}>{menu}</div>}
         options={allTrains}
         optionRender={(option) => {
           const isFav = favorites.includes(String(option.value));
@@ -133,7 +133,7 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
         loading={trainLoading}
         onClick={() => {
           setTrainLoading(true);
-          router.push(`/train/${selectedDate}/${selectedTrain}`).catch(console.error);
+          router.push(`/train/${selectedDate}/${selectedTrain}`);
         }}
       >
         Jatka

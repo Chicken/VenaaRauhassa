@@ -17,6 +17,11 @@ export const env = createEnv({
     ERROR_WEBHOOK: z.string().optional(),
     ERROR_UPLOAD_URL: z.string().optional(),
     FEEDBACK_WEBHOOK: z.string().optional(),
+    FRONT_MESSAGE: z
+      .string()
+      .trim()
+      .optional()
+      .transform((value) => (value === "" ? undefined : value)),
     MAINTENANCE_MODE: z.string().optional(),
     REQUEST_TIMEOUT: z
       .string()
@@ -57,6 +62,7 @@ export const env = createEnv({
     ERROR_WEBHOOK: process.env.ERROR_WEBHOOK,
     ERROR_UPLOAD_URL: process.env.ERROR_UPLOAD_URL,
     FEEDBACK_WEBHOOK: process.env.FEEDBACK_WEBHOOK,
+    FRONT_MESSAGE: process.env.FRONT_MESSAGE,
     MAINTENANCE_MODE: process.env.MAINTENANCE_MODE,
     REQUEST_TIMEOUT: process.env.REQUEST_TIMEOUT,
     METRICS_SECRET: process.env.METRICS_SECRET,

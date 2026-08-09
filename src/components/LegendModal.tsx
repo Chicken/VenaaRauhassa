@@ -72,10 +72,7 @@ export const LegendModal = ({
           borderColor={"#820909"}
           text={"Erikoispaikka (ekstra, ravintolavaunu, hytti, eläin)"}
         />
-        <LegendItem
-          bgColor={colorblindMode ? "#0072B2" : "#a6e3a1"}
-          text={"Paikka vapaa"}
-        />
+        <LegendItem bgColor={colorblindMode ? "#0072B2" : "#a6e3a1"} text={"Paikka vapaa"} />
         {colorblindMode && heatmapEnabled ? (
           <LegendItem
             bgGradient
@@ -106,10 +103,7 @@ export const LegendModal = ({
           <Switch
             checked={heatmapEnabled}
             onChange={() => {
-              // @ts-expect-error no types for globally available plausible function
               if (window.plausible) {
-                // @ts-expect-error no types for globally available plausible function
-                // eslint-disable-next-line
                 window.plausible("Change Map Type", { props: { heatmapEnabled: !heatmapEnabled } });
               }
               setHeatmapEnabled((s) => !s);

@@ -1,4 +1,5 @@
 .github/
+data/
 node_modules/
 .next/
 out/

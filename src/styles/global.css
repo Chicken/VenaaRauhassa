@@ -54,6 +54,17 @@ body {
   align-items: center;
 }
 
+.frontpage .front-message {
+  width: min(100%, 720px);
+  box-sizing: border-box;
+  padding: 10px 14px;
+  margin: 0 0 20px;
+  color: #34433d;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  text-align: center;
+}
+
 .frontpage .trainselector {
   width: 100%;
   display: flex;

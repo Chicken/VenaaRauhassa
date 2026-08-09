@@ -28,8 +28,6 @@ export const SeatFinder: React.FC<SeatFinderProps> = ({
   >
     <Button
       onClick={() => {
-        // @ts-expect-error no types for globally available plausible function
-        // eslint-disable-next-line
         if (window.plausible) window.plausible("Find Seat");
 
         const travelTimes = stations

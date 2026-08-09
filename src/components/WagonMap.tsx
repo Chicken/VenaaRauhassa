@@ -212,7 +212,7 @@ export const WagonMap: React.FC<WagonMapProps> = ({
                     if (pet) {
                       proxies.push(
                         <SvgProxy
-                          key={seat.number + "-seat-number-1"}
+                          key={seat.number + "-seat-number-pet-hidden"}
                           selector={"#seatnumber_" + seat.number}
                           fill="none"
                         />

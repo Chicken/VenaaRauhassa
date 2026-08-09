@@ -1,9 +1,7 @@
-import type { NextRouter } from "next/router";
 import { useEffect } from "react";
 import type { Train, Station } from "~/types";
 
 export const useSyncUrlState = (
-  router: NextRouter,
   train: Omit<Train, "timeTableRows"> | undefined,
   stations: Station[] | undefined,
   timeRange: number[],
@@ -11,21 +9,17 @@ export const useSyncUrlState = (
 ) => {
   useEffect(() => {
     if (!train || !stations) return;
-    function safeShallow(url: string) {
-      if (decodeURIComponent(router.asPath) !== url)
-        void router.replace(url, undefined, { shallow: true }).catch(console.error);
+    function replaceUrl(url: string) {
+      const currentUrl = decodeURIComponent(window.location.pathname + window.location.search);
+      if (currentUrl !== url) window.history.replaceState(null, "", url);
     }
-    if (
-      timeRange[0] === 0 &&
-      timeRange[1] === stations.length - 1 &&
-      selectedSeat === null
-    ) {
-      safeShallow(`/train/${train.departureDate}/${train.trainNumber}`);
+    if (timeRange[0] === 0 && timeRange[1] === stations.length - 1 && selectedSeat === null) {
+      replaceUrl(`/train/${train.departureDate}/${train.trainNumber}`);
     } else if (
       (timeRange[0] !== 0 || timeRange[1] !== stations.length - 1) &&
       selectedSeat !== null
     ) {
-      safeShallow(
+      replaceUrl(
         `/train/${train.departureDate}/${train.trainNumber}?from=${
           stations[timeRange[0]!]!.stationShortCode
         }&to=${stations[timeRange[1]!]!.stationShortCode}&seat=${selectedSeat[0]}-${
@@ -33,15 +27,15 @@ export const useSyncUrlState = (
         }`
       );
     } else if (selectedSeat !== null) {
-      safeShallow(
+      replaceUrl(
         `/train/${train.departureDate}/${train.trainNumber}?seat=${selectedSeat[0]}-${selectedSeat[1]}`
       );
     } else {
-      safeShallow(
+      replaceUrl(
         `/train/${train.departureDate}/${train.trainNumber}?from=${
           stations[timeRange[0]!]!.stationShortCode
         }&to=${stations[timeRange[1]!]!.stationShortCode}`
       );
     }
-  }, [router, train, stations, timeRange, selectedSeat]);
+  }, [train, stations, timeRange, selectedSeat]);
 };

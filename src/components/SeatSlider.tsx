@@ -34,7 +34,10 @@ export const SeatSlider: React.FC<SeatSliderProps> = ({
   const labelWidth = Math.max(maxNameLen * 8, 80);
   const singleRowWidth = stations.length * labelWidth;
   const needsAlternation = isMobile || singleRowWidth > 900;
-  const computedMinWidth = Math.max(400, needsAlternation ? Math.ceil(stations.length / 2) * labelWidth : singleRowWidth);
+  const computedMinWidth = Math.max(
+    400,
+    needsAlternation ? Math.ceil(stations.length / 2) * labelWidth : singleRowWidth
+  );
 
   return (
     <Slider
@@ -42,8 +45,6 @@ export const SeatSlider: React.FC<SeatSliderProps> = ({
       max={stations.length - 1}
       value={timeRange}
       onChange={(value) => {
-        // @ts-expect-error no types for globally available plausible function
-        // eslint-disable-next-line
         if (window.plausible) window.plausible("Change Range");
         if (value[0] === value[1]) {
           if (value[0] === 0 || value[0] === stations.length - 1) return;

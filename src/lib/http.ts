@@ -25,7 +25,7 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
   const vendor = getVendor(url);
   const end = externalApiRequestDuration.startTimer({ vendor, method: "POST" });
   try {
-    const res = (await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         ...headers,
@@ -44,14 +44,14 @@ export const postJSON = async (url: string, body?: unknown, headers?: Record<str
         err.responseBody = (await res.json().catch(() => res.text().catch(() => null))) as unknown;
         throw err;
       }
-      return res.json();
-    })) as unknown;
+      return (await res.json()) as unknown;
+    });
     end();
     return res;
   } catch (e: unknown) {
-    end(); // ensure timer ends on error too, though status logic above handles the response code. 
-           // If fetch fails (network error), status won't be recorded in the .then block.
-           // We could add a catch block counter for network errors if needed.
+    end(); // ensure timer ends on error too, though status logic above handles the response code.
+    // If fetch fails (network error), status won't be recorded in the .then block.
+    // We could add a catch block counter for network errors if needed.
     if (e instanceof Error) {
       // @ts-expect-error just adding some ghost properties
       e.requestUrl = url;
@@ -68,7 +68,7 @@ export const getJSON = async (url: string, headers?: Record<string, string>) => 
   const vendor = getVendor(url);
   const end = externalApiRequestDuration.startTimer({ vendor, method: "GET" });
   try {
-    const res = (await fetch(url, {
+    const res = await fetch(url, {
       method: "GET",
       headers: {
         ...headers,
@@ -85,8 +85,8 @@ export const getJSON = async (url: string, headers?: Record<string, string>) => 
         err.responseBody = (await res.json().catch(() => res.text().catch(() => null))) as unknown;
         throw err;
       }
-      return res.json();
-    })) as unknown;
+      return (await res.json()) as unknown;
+    });
     end();
     return res;
   } catch (e: unknown) {

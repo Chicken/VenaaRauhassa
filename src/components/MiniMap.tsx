@@ -35,7 +35,7 @@ export const MiniMap: React.FC<MiniMapProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
   const cancelClickAnimationRef = useRef<(() => void) | null>(null);
-  const [, forceUpdate] = useReducer<(x: number) => number>((x) => x + 1, 0);
+  const [, forceUpdate] = useReducer((value: number) => value + 1, 0);
 
   const isMobile = useMediaQuery({
     maxWidth: 768,

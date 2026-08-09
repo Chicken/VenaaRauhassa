@@ -1,3 +1,5 @@
+"use client";
+
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -6,8 +8,7 @@ import {
   ReloadOutlined,
 } from "@ant-design/icons";
 import { Button, Tooltip } from "antd";
-import Head from "next/head";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { FeedbackModal } from "~/components/FeedbackModal";
 
@@ -18,6 +19,7 @@ type ErrorProps = {
   /** default true */
   showFeedback?: boolean;
   date?: string;
+  onRetry?: () => void;
 };
 
 export const ErrorComponent: React.FC<ErrorProps> = ({
@@ -25,6 +27,7 @@ export const ErrorComponent: React.FC<ErrorProps> = ({
   showReload,
   showFeedback,
   date,
+  onRetry,
 }) => {
   const router = useRouter();
   const [isFbModalOpen, setIsFbModalOpen] = useState<boolean>(false);
@@ -77,10 +80,6 @@ export const ErrorComponent: React.FC<ErrorProps> = ({
 
   return (
     <div style={{ textAlign: "center" }}>
-      <Head>
-        <title>VenaaRauhassa - Virhe</title>
-        <meta name="robots" content="noindex,nofollow" />
-      </Head>
       <h1>{message}</h1>
       <div
         style={{
@@ -95,7 +94,7 @@ export const ErrorComponent: React.FC<ErrorProps> = ({
             fontSize: "16px",
             marginRight: "10px",
           }}
-          onClick={() => void router.push(date ? `/?date=${date}` : "/").catch(console.error)}
+          onClick={() => router.push(date ? `/?date=${date}` : "/")}
         >
           <LeftCircleOutlined /> Etusivulle
         </Button>
@@ -107,7 +106,7 @@ export const ErrorComponent: React.FC<ErrorProps> = ({
               width: "170px",
               fontSize: "16px",
             }}
-            onClick={() => window.location.reload()}
+            onClick={onRetry ?? (() => window.location.reload())}
           >
             <ReloadOutlined /> Yritä uudelleen
           </Button>
