@@ -24,9 +24,14 @@ import { useStickyState } from "~/lib/hooks/useStickyState";
 import { useSyncUrlState } from "~/lib/hooks/useSyncUrlState";
 import { error } from "~/lib/logger";
 import { checkRateLimit, getIp, getRemainingRateLimit } from "~/lib/rateLimit";
-import { getDescription, processStations, processWagons } from "~/lib/trainUtils";
+import {
+  getDescription,
+  processStations,
+  processTrainDisplayInfo,
+  processWagons,
+} from "~/lib/trainUtils";
 import { getTrainOnDate } from "~/lib/vr";
-import type { Station, Train, Wagon } from "~/types";
+import type { Station, Train, TrainDisplayInfo, Wagon } from "~/types";
 
 // TODO: site is slow, have some sort of loading skeleton, also for index
 
@@ -38,6 +43,7 @@ export default function TrainPage({
   train,
   stations,
   wagons,
+  trainDisplayInfo,
   maintenance,
   fetchedAt,
   retryAfter,
@@ -280,6 +286,8 @@ export default function TrainPage({
               (wagon) => wagon.placeType !== "VEHICLE" && !["EIL", "EILF"].includes(wagon.type)
             )}
             mainMapRef={mainMapRef}
+            trainDisplayInfo={trainDisplayInfo}
+            train={train}
           />
 
           {isInComplete ? null : (
@@ -447,6 +455,7 @@ export const getServerSideProps = (async (context) => {
     const stations = processStations(train, allStations);
 
     const wagons = processWagons(train);
+    const trainDisplayInfo = processTrainDisplayInfo(train, allStations);
 
     const fetchedAt =
       getTrainOnDate.cacheTimestamp(context.params.date, context.params.train) ?? Date.now();
@@ -491,6 +500,7 @@ export const getServerSideProps = (async (context) => {
         },
         stations,
         wagons,
+        trainDisplayInfo,
       },
     };
   } catch (e: unknown) {
@@ -520,6 +530,7 @@ export const getServerSideProps = (async (context) => {
         train: Omit<Train, "timeTableRows">;
         stations: Station[];
         wagons: Wagon[];
+        trainDisplayInfo: TrainDisplayInfo;
       }
     | {
         state: "invalid-params";

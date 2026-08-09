@@ -110,6 +110,14 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
+}
+
+.minimap-wagon-stack {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .minimap-wagon {
@@ -141,8 +149,118 @@ body {
   border-top-right-radius: 40px;
 }
 
+.minimap-route-segment {
+  position: relative;
+  flex: none;
+  height: 26px;
+  border-top: 1px solid;
+}
+
+.minimap-route-segment-current {
+  border-color: #acd9c1;
+  background: #d9f3e5;
+}
+
+.minimap-route-segment-linked {
+  border-color: #b2d9ea;
+  background: #dceff8;
+}
+
+.minimap-route-segment-first {
+  border-bottom-left-radius: 4px;
+}
+
+.minimap-route-segment-last {
+  border-bottom-right-radius: 4px;
+}
+
+.minimap-route-label {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  color: #34433d;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.train-operation-details {
+  display: grid;
+  width: 65%;
+  margin: 14px auto 0;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.train-operation-panel {
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 3px solid #00a149;
+}
+
+.train-operation-panel h2 {
+  margin: 0 0 6px;
+  color: #343232;
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.35;
+}
+
+.train-orientation-list,
+.train-split-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.train-orientation-list li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #343232;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.train-orientation-list svg {
+  flex: none;
+  color: #006fbd;
+}
+
+.train-split-list li {
+  color: #4f5b56;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.train-split-link {
+  color: #006fbd;
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.train-split-link:hover {
+  color: #005b9b;
+}
+
+.train-split-link:focus-visible {
+  border-radius: 2px;
+  outline: 3px solid rgba(0, 161, 73, 0.35);
+  outline-offset: 2px;
+}
+
 @media (max-width: 1200px) {
-  .minimap {
+  .minimap,
+  .train-operation-details {
     width: 80%;
   }
 }
@@ -152,6 +270,11 @@ body {
     width: 100%;
     overflow-x: scroll;
     position: unset;
+  }
+  .train-operation-details {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
   .minimap-wagon-container {
     flex: unset;

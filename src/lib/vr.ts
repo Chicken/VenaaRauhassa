@@ -73,9 +73,10 @@ async function vrLogin(username: string, password: string) {
   if (typeof loginInitRes.data !== "string") throw new Error("Login init response was not text");
   const auth0Config = auth0ConfigSchema.parse(
     JSON.parse(
-      Buffer.from(loginInitRes.data.split('data-auth0config="')[1]?.split('"')[0] ?? "", "base64").toString(
-        "utf-8"
-      )
+      Buffer.from(
+        loginInitRes.data.split('data-auth0config="')[1]?.split('"')[0] ?? "",
+        "base64"
+      ).toString("utf-8")
     )
   );
 
@@ -236,6 +237,28 @@ const wagonResponseSchema = z.object({
             .transform((v) => v ?? null),
         })
       ),
+      orientations: z.array(
+        z.object({
+          from: z.string(),
+          to: z.string(),
+          orientation: z.enum(["largest_number_first", "smallest_number_first"]),
+        })
+      ),
+    })
+  ),
+  commercialTrainInfos: z.record(
+    z.string(),
+    z.object({
+      coachInfo: z.object({
+        start: z.number(),
+        end: z.number(),
+      }),
+      // tuple (departure, arrival)
+      stations: z.array(
+        z.object({
+          stationAbbr: z.string(),
+        })
+      ),
     })
   ),
 });
@@ -263,8 +286,7 @@ async function getWagonMapData(
     );
 
     const parsed = wagonResponseSchema.parse(res);
-
-    return parsed.coaches;
+    return parsed;
   } catch (e) {
     if (
       e instanceof Error &&
@@ -308,114 +330,121 @@ const trainResponseSchema = z.array(
   })
 );
 
-export const getTrainOnDate = cache(15 * MINUTE, 2 * HOUR, async (date: string, trainNumber: string) => {
-  const res = await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`, {
-    "Digitraffic-User": digitrafficUser,
-  });
+export const getTrainOnDate = cache(
+  15 * MINUTE,
+  2 * HOUR,
+  async (date: string, trainNumber: string) => {
+    const res = await getJSON(`https://rata.digitraffic.fi/api/v1/trains/${date}/${trainNumber}`, {
+      "Digitraffic-User": digitrafficUser,
+    });
 
-  const data = trainResponseSchema.parse(res);
-  const train = data[0];
-  if (!train) return null;
+    const data = trainResponseSchema.parse(res);
+    const train = data[0];
+    if (!train) return null;
 
-  const auth = await getVrAuth();
+    const auth = await getVrAuth();
 
-  train.timeTableRows = train.timeTableRows.filter(
-    (r) => r.trainStopping && r.commercialStop
-  );
+    train.timeTableRows = train.timeTableRows.filter((r) => r.trainStopping && r.commercialStop);
 
-  // TODO: figure out a real solution for this problem
-  if (
-    train.timeTableRows
-      .slice(0, 2)
-      .map((ttr) => ttr.stationShortCode)
-      .join(",") === "TUS,TKU"
-  ) {
-    train.timeTableRows.splice(0, 2);
-  }
-  if (
-    train.timeTableRows
-      .slice(-2)
-      .map((ttr) => ttr.stationShortCode)
-      .join(",") === "TKU,TUS"
-  ) {
-    train.timeTableRows.splice(-2);
-  }
+    // TODO: figure out a real solution for this problem
+    if (
+      train.timeTableRows
+        .slice(0, 2)
+        .map((ttr) => ttr.stationShortCode)
+        .join(",") === "TUS,TKU"
+    ) {
+      train.timeTableRows.splice(0, 2);
+    }
+    if (
+      train.timeTableRows
+        .slice(-2)
+        .map((ttr) => ttr.stationShortCode)
+        .join(",") === "TKU,TUS"
+    ) {
+      train.timeTableRows.splice(-2);
+    }
 
-  const newTrain = {
-    ...train,
-    timeTableRows: await Promise.all(
-      Array(train.timeTableRows.length / 2)
-        .fill(0)
-        .map(async (_, i) => {
-          const dep = train.timeTableRows[i * 2]!;
-          const arr = train.timeTableRows[i * 2 + 1]!;
-          const trainNumber = train.trainNumber.toString();
-          try {
-            const wagons = await getWagonMapData(
-              dep.stationShortCode,
-              arr.stationShortCode,
-              new Date(dep.scheduledTime),
-              trainNumber,
-              auth.sessionId,
-              auth.token
-            );
-            return {
-              dep,
-              arr,
-              wagons,
-            };
-          } catch (e) {
-            // cant search because HSL
-            if (dep.stationShortCode !== "PSL" && arr.stationShortCode !== "HKI") {
-              console.error(e);
-              void error(
-                {
-                  date,
-                  train: trainNumber,
-                  error:
-                    e instanceof Error
-                      ? e instanceof ZodError
-                        ? "Zod validation error"
-                        : e.name + " " + e.message
-                      : undefined,
-                  message: "Wagon map data fetching failed",
-                },
-                e
-              ).catch(console.error);
+    const newTrain = {
+      ...train,
+      timeTableRows: await Promise.all(
+        Array(train.timeTableRows.length / 2)
+          .fill(0)
+          .map(async (_, i) => {
+            const dep = train.timeTableRows[i * 2]!;
+            const arr = train.timeTableRows[i * 2 + 1]!;
+            const trainNumber = train.trainNumber.toString();
+            try {
+              const wagonMap = await getWagonMapData(
+                dep.stationShortCode,
+                arr.stationShortCode,
+                new Date(dep.scheduledTime),
+                trainNumber,
+                auth.sessionId,
+                auth.token
+              );
+              return {
+                dep,
+                arr,
+                wagons: wagonMap.coaches,
+                commercialTrainInfos: wagonMap.commercialTrainInfos,
+              };
+            } catch (e) {
+              // cant search because HSL
+              if (dep.stationShortCode !== "PSL" && arr.stationShortCode !== "HKI") {
+                console.error(e);
+                void error(
+                  {
+                    date,
+                    train: trainNumber,
+                    error:
+                      e instanceof Error
+                        ? e instanceof ZodError
+                          ? "Zod validation error"
+                          : e.name + " " + e.message
+                        : undefined,
+                    message: "Wagon map data fetching failed",
+                  },
+                  e
+                ).catch(console.error);
+              }
+              return {
+                dep,
+                arr,
+                wagons: null,
+                commercialTrainInfos: null,
+                error: e,
+              };
             }
-            return {
-              dep,
-              arr,
-              wagons: null,
-              error: e,
-            };
-          }
-        })
-    ),
-  };
+          })
+      ),
+    };
 
-  // TODO: figure out a real solution for this problem
-  if (
-    newTrain.timeTableRows.at(-1) != null &&
-    newTrain.timeTableRows.at(-2) != null &&
-    newTrain.timeTableRows.at(-1)!.wagons == null &&
-    newTrain.timeTableRows.at(-2)!.wagons != null &&
-    // cant search because HSL
-    newTrain.timeTableRows.at(-1)!.dep.stationShortCode === "PSL" &&
-    newTrain.timeTableRows.at(-1)!.arr.stationShortCode === "HKI"
-  ) {
-    newTrain.timeTableRows.at(-1)!.wagons = newTrain.timeTableRows.at(-2)!.wagons;
-  }
+    // TODO: figure out a real solution for this problem
+    if (
+      newTrain.timeTableRows.at(-1) != null &&
+      newTrain.timeTableRows.at(-2) != null &&
+      newTrain.timeTableRows.at(-1)!.wagons == null &&
+      newTrain.timeTableRows.at(-2)!.wagons != null &&
+      // cant search because HSL
+      newTrain.timeTableRows.at(-1)!.dep.stationShortCode === "PSL" &&
+      newTrain.timeTableRows.at(-1)!.arr.stationShortCode === "HKI"
+    ) {
+      newTrain.timeTableRows.at(-1)!.wagons = newTrain.timeTableRows.at(-2)!.wagons;
+      newTrain.timeTableRows.at(-1)!.commercialTrainInfos =
+        newTrain.timeTableRows.at(-2)!.commercialTrainInfos;
+    }
 
-  const nullWagons = newTrain.timeTableRows.filter((ttr) => ttr.wagons == null).length;
-  if (nullWagons === newTrain.timeTableRows.length || nullWagons >= 3) {
-    throw new AggregateError(
-      newTrain.timeTableRows.filter((ttr) => "error" in ttr).map((ttr) => ttr.error),
-      "Too many null wagons!"
-    );
-  }
+    const nullWagons = newTrain.timeTableRows.filter((ttr) => ttr.wagons == null).length;
+    if (nullWagons === newTrain.timeTableRows.length || nullWagons >= 3) {
+      throw new AggregateError(
+        newTrain.timeTableRows.filter((ttr) => "error" in ttr).map((ttr) => ttr.error),
+        "Too many null wagons!"
+      );
+    }
 
-  for (const ttr of newTrain.timeTableRows) delete ttr.error;
+    for (const ttr of newTrain.timeTableRows) delete ttr.error;
 
-  return newTrain;
-}, "getTrainOnDate");
+    return newTrain;
+  },
+  "getTrainOnDate"
+);

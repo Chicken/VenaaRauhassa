@@ -1,15 +1,35 @@
-import { Baby, Coffee, PawPrint, Plus, Utensils, VolumeX } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Baby,
+  Coffee,
+  PawPrint,
+  Plus,
+  Utensils,
+  VolumeX,
+} from "lucide-react";
 import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useMediaQuery } from "react-responsive";
 import { Easing, animate } from "~/lib/animate";
-import type { Wagon } from "~/types";
+import type { SplitTrainPart, Train, TrainDisplayInfo, Wagon } from "~/types";
 
 interface MiniMapProps {
   wagons: Wagon[];
   mainMapRef: HTMLDivElement | null;
+  trainDisplayInfo: TrainDisplayInfo;
+  train: Omit<Train, "timeTableRows">;
 }
 
-export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
+const isWagonInPart = (wagonNumber: number, part: SplitTrainPart) =>
+  wagonNumber >= Math.min(part.coachStart, part.coachEnd) &&
+  wagonNumber <= Math.max(part.coachStart, part.coachEnd);
+
+export const MiniMap: React.FC<MiniMapProps> = ({
+  wagons,
+  mainMapRef,
+  trainDisplayInfo,
+  train,
+}) => {
   const [miniMapRef, setMiniMapRef] = useState<HTMLDivElement | null>(null);
   const [boxRef, setBoxRef] = useState<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -228,6 +248,12 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
   });
 
   const hasDoubleDeckers = wagons.some((wagon) => wagon.floors.length > 1);
+  const mapHeight = hasDoubleDeckers ? 80 : 50;
+  const splitParts = trainDisplayInfo.split?.parts ?? [];
+  const hasSplit = splitParts.length > 1;
+  const currentTrainNumber = String(train.trainNumber);
+  const linkedParts = splitParts.filter((part) => part.trainNumber !== currentTrainNumber);
+  const wagonsRunAscending = (wagons.at(-1)?.number ?? 0) > (wagons.at(0)?.number ?? 0);
 
   return (
     <div style={{ position: "relative" }}>
@@ -236,103 +262,133 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
         ref={(ref) => setMiniMapRef(ref)}
         className="minimap"
         onClick={handleMapClick}
-        style={{ height: hasDoubleDeckers ? "80px" : "50px" }}
+        style={{ height: `${mapHeight + (hasSplit ? 26 : 0)}px` }}
       >
         {wagons.map((wagon, idx) => {
           const wagonHasUpstairs = wagon.floors.length > 1;
+          const splitPart = splitParts.find((part) => isWagonInPart(wagon.number, part));
+          const partWagons = splitPart
+            ? wagons.filter((candidate) => isWagonInPart(candidate.number, splitPart))
+            : [];
+          const isFirstPartWagon = partWagons.at(0)?.number === wagon.number;
+          const isLastPartWagon = partWagons.at(-1)?.number === wagon.number;
           return (
             <div key={wagon.number} className="minimap-wagon-container">
-              {[...wagon.floors].reverse().map((floor) => {
-                const isLeft = idx === 0;
-                const isRight = idx === wagons.length - 1;
-                const isEnd = isLeft || isRight;
-                const isTop = !wagonHasUpstairs || floor.number === 2;
-                const isBottom = !wagonHasUpstairs || floor.number === 1;
-                let className = "minimap-wagon ";
-                if (isEnd && isTop)
-                  className += isLeft ? "minimap-locomotive-left" : "minimap-locomotive-right";
-                return (
-                  <div
-                    key={floor.number}
-                    className={className}
-                    style={{
-                      position: "relative",
-                      height: hasDoubleDeckers ? (wagonHasUpstairs ? "50%" : "70%") : "100%",
-                    }}
-                  >
-                    <span
+              <div className="minimap-wagon-stack" style={{ height: `${mapHeight}px` }}>
+                {[...wagon.floors].reverse().map((floor) => {
+                  const isLeft = idx === 0;
+                  const isRight = idx === wagons.length - 1;
+                  const isEnd = isLeft || isRight;
+                  const isTop = !wagonHasUpstairs || floor.number === 2;
+                  const isBottom = !wagonHasUpstairs || floor.number === 1;
+                  let className = "minimap-wagon ";
+                  if (isEnd && isTop)
+                    className += isLeft ? "minimap-locomotive-left" : "minimap-locomotive-right";
+                  return (
+                    <div
+                      key={floor.number}
+                      className={className}
                       style={{
-                        fontWeight: "bold",
-                        fontSize: "14px",
-                        paddingLeft: "8px",
-                        position: "absolute",
+                        position: "relative",
+                        height: hasDoubleDeckers ? (wagonHasUpstairs ? "50%" : "70%") : "100%",
                       }}
                     >
-                      {wagon.number}
+                      <span
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "14px",
+                          paddingLeft: "8px",
+                          position: "absolute",
+                        }}
+                      >
+                        {wagon.number}
+                      </span>
+                      {floor.services.includes("PETS") ? (
+                        <span style={{ margin: "auto" }}>
+                          <PawPrint size="22px" />
+                        </span>
+                      ) : null}
+                      {floor.services.includes("PLAY-AREA") ? (
+                        <span style={{ margin: "auto" }}>
+                          <Baby size="22px" />
+                        </span>
+                      ) : null}
+                      {floor.services.includes("EKSTRA-RELAXED") ? (
+                        <span
+                          style={{
+                            fontWeight: "bold",
+                            fontSize: "12px",
+                            margin: "auto",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <span className="ekstra-text">Ekstra</span>{" "}
+                          <Coffee size="18px" className="ekstra-icon" />
+                        </span>
+                      ) : null}
+                      {floor.services.includes("EKSTRA-CALM") ? (
+                        <span
+                          style={{
+                            fontWeight: "bold",
+                            fontSize: "12px",
+                            margin: "auto",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <span className="ekstra-text">Ekstra</span>{" "}
+                          <VolumeX size="18px" className="ekstra-icon" />
+                        </span>
+                      ) : null}
+                      {floor.services.includes("EKSTRA-PLUS") ? (
+                        <span
+                          style={{
+                            fontWeight: "bold",
+                            fontSize: "12px",
+                            margin: "auto",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <span className="ekstra-text">Ekstra</span>{" "}
+                          <Plus size="18px" className="ekstra-icon" />
+                        </span>
+                      ) : null}
+                      {["TPB", "RX", "RK", "ERD", "TTC"].includes(wagon.type) && isBottom ? (
+                        <span style={{ margin: "auto" }}>
+                          <Utensils size="22px" />
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+              {hasSplit && splitPart ? (
+                <div
+                  className={`minimap-route-segment ${
+                    splitPart.trainNumber === currentTrainNumber
+                      ? "minimap-route-segment-current"
+                      : "minimap-route-segment-linked"
+                  } ${isFirstPartWagon ? "minimap-route-segment-first" : ""} ${
+                    isLastPartWagon ? "minimap-route-segment-last" : ""
+                  }`}
+                >
+                  {isFirstPartWagon ? (
+                    <span
+                      className="minimap-route-label"
+                      style={{ width: `${partWagons.length * 100}%` }}
+                    >
+                      Vaunut {Math.min(splitPart.coachStart, splitPart.coachEnd)}–
+                      {Math.max(splitPart.coachStart, splitPart.coachEnd)}:{" "}
+                      {splitPart.destinationStation}
                     </span>
-                    {floor.services.includes("PETS") ? (
-                      <span style={{ margin: "auto" }}>
-                        <PawPrint size="22px" />
-                      </span>
-                    ) : null}
-                    {floor.services.includes("PLAY-AREA") ? (
-                      <span style={{ margin: "auto" }}>
-                        <Baby size="22px" />
-                      </span>
-                    ) : null}
-                    {floor.services.includes("EKSTRA-RELAXED") ? (
-                      <span
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "12px",
-                          margin: "auto",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <span className="ekstra-text">Ekstra</span>{" "}
-                        <Coffee size="18px" className="ekstra-icon" />
-                      </span>
-                    ) : null}
-                    {floor.services.includes("EKSTRA-CALM") ? (
-                      <span
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "12px",
-                          margin: "auto",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <span className="ekstra-text">Ekstra</span>{" "}
-                        <VolumeX size="18px" className="ekstra-icon"  />
-                      </span>
-                    ) : null}
-                    {floor.services.includes("EKSTRA-PLUS") ? (
-                      <span
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "12px",
-                          margin: "auto",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <span className="ekstra-text">Ekstra</span>{" "}
-                        <Plus size="18px" className="ekstra-icon" />
-                      </span>
-                    ) : null}
-                    {["TPB", "RX", "RK", "ERD", "TTC"].includes(wagon.type) && isBottom ? (
-                      <span style={{ margin: "auto" }}>
-                        <Utensils size="22px" />
-                      </span>
-                    ) : null}
-                  </div>
-                );
-              })}
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           );
         })}
@@ -344,12 +400,68 @@ export const MiniMap: React.FC<MiniMapProps> = ({ wagons, mainMapRef }) => {
           style={{
             position: "absolute",
             top: 0,
-            height: "100%",
+            height: `${mapHeight}px`,
             backgroundColor: "rgba(0, 0, 0, 0.3)",
             borderRadius: "5px",
           }}
         ></div>
       </div>
+
+      {trainDisplayInfo.orientations.length > 0 ||
+      (trainDisplayInfo.split && linkedParts.length > 0) ? (
+        <div className="train-operation-details">
+          {trainDisplayInfo.orientations.length > 0 ? (
+            <section className="train-operation-panel" aria-labelledby="train-orientation-title">
+              <h2 id="train-orientation-title">Junan suunniteltu kulkusuunta</h2>
+              <ul className="train-orientation-list">
+                {trainDisplayInfo.orientations.map((orientation) => {
+                  const pointsRight =
+                    orientation.orientation ===
+                    (wagonsRunAscending ? "largest_number_first" : "smallest_number_first");
+                  const Arrow = pointsRight ? ArrowRight : ArrowLeft;
+                  return (
+                    <li
+                      key={`${orientation.from}-${orientation.to}-${orientation.orientation}`}
+                      aria-label={`Kulkusuunta välillä ${orientation.from} ja ${
+                        orientation.to
+                      }: kohti ${pointsRight ? "oikeaa" : "vasenta"}`}
+                    >
+                      <Arrow aria-hidden="true" size={22} strokeWidth={2} />
+                      <span>
+                        {orientation.from}–{orientation.to}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
+
+          {trainDisplayInfo.split && linkedParts.length > 0 ? (
+            <section className="train-operation-panel" aria-labelledby="train-split-title">
+              <h2 id="train-split-title">
+                Juna jakautuu asemalla {trainDisplayInfo.split.station}
+              </h2>
+              <ul className="train-split-list">
+                {linkedParts.map((part) => (
+                  <li key={part.trainNumber}>
+                    Vaunut {Math.min(part.coachStart, part.coachEnd)}–
+                    {Math.max(part.coachStart, part.coachEnd)} jatkavat junana{" "}
+                    <a
+                      href={`/train/${train.departureDate}/${part.trainNumber}`}
+                      className="train-split-link"
+                    >
+                      {train.trainType}
+                      {part.trainNumber}
+                    </a>
+                    . Määränpää: {part.destinationStation}.
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 };

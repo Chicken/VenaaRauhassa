@@ -16,6 +16,28 @@ export type Wagon = {
   floors: Floor[];
 };
 
+export type TrainOrientation = {
+  from: string;
+  to: string;
+  orientation: "largest_number_first" | "smallest_number_first";
+};
+
+export type SplitTrainPart = {
+  trainNumber: string;
+  coachStart: number;
+  coachEnd: number;
+  departureStation: string;
+  destinationStation: string;
+};
+
+export type TrainDisplayInfo = {
+  orientations: TrainOrientation[];
+  split: {
+    station: string;
+    parts: SplitTrainPart[];
+  } | null;
+};
+
 export type Floor = {
   number: number;
   image: string;
