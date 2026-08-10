@@ -95,6 +95,11 @@ body {
   font-weight: 500;
 }
 
+.pwa-install-card ~ .footer-action-button {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
 /* Wahonmap */
 .wagonClass {
   cursor: grab;
