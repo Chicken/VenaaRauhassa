@@ -46,6 +46,8 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

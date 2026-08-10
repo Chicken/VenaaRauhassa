@@ -20,7 +20,10 @@ FROM base AS builder
 
 WORKDIR /app
 
+ARG GITHUB_SHA=development
+
 ENV NEXT_OUTPUT=standalone
+ENV GITHUB_SHA=$GITHUB_SHA
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

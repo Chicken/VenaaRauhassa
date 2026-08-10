@@ -1,5 +1,6 @@
 import { Button } from "antd";
 import React, { type SetStateAction } from "react";
+import { InstallPwaButton } from "~/components/InstallPwaButton";
 
 type FooterProps = {
   setIsFbModalOpen: (value: SetStateAction<boolean>) => void;
@@ -9,6 +10,8 @@ type FooterProps = {
 export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen, onInfoClick }) => {
   return (
     <div className="footer">
+      <InstallPwaButton />
+
       <Button
         onClick={() => setIsFbModalOpen(true)}
         style={{

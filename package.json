@@ -37,6 +37,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@serwist/turbopack": "^9.5.12",
     "@types/better-sqlite3": "^9.6.0",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^24.13.3",
@@ -45,10 +46,12 @@
     "@typescript/native": "npm:typescript@^7.0.2",
     "autoprefixer": "^10.5.4",
     "cross-env": "^10.1.0",
+    "esbuild": "^0.28.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.12",
     "postcss": "^8.5.25",
     "prettier": "^3.9.6",
+    "serwist": "^9.5.12",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.65.0"
   }

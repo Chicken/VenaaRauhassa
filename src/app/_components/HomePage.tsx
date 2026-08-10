@@ -2,7 +2,6 @@
 
 import { message } from "antd";
 import dayjs from "dayjs";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { FeedbackModal } from "~/components/FeedbackModal";
 import { Footer } from "~/components/Footer";
@@ -21,11 +20,11 @@ type Props = {
 };
 
 export function HomePage({ frontMessage, initialDate, initialTrains, maintenance }: Props) {
-  const router = useRouter();
   const [messageApi, messageContextHolder] = message.useMessage();
   const mounted = useMounted();
 
   const [allTrains, setAllTrains] = useState(initialTrains);
+  const [usingCachedTrains, setUsingCachedTrains] = useState(false);
   const [trainsLoaded, setTrainsLoaded] = useState(true);
   const [isFbModalOpen, setIsFbModalOpen] = useState(false);
   const [welcomeShown, setWelcomeShown] = useStickyState("welcomeShown", false);
@@ -40,9 +39,12 @@ export function HomePage({ frontMessage, initialDate, initialTrains, maintenance
       try {
         const response = await fetch(`/api/trains?date=${date}`);
         if (!response.ok) throw new Error(`Train request failed with ${response.status}`);
+        setUsingCachedTrains(response.headers.get("X-PWA-Cache") === "true");
         setAllTrains((await response.json()) as AllTrains);
       } catch (error) {
         console.error(error);
+        setAllTrains([]);
+        setUsingCachedTrains(false);
         void messageApi.open({
           type: "error",
           content: "Junien hakeminen epäonnistui.",
@@ -55,18 +57,16 @@ export function HomePage({ frontMessage, initialDate, initialTrains, maintenance
   );
 
   useEffect(() => {
+    setSelectedTrain(null);
+    setAllTrains([]);
+    setUsingCachedTrains(false);
+
     if (selectedDate === initialDate) {
       setAllTrains(initialTrains);
       return;
     }
     if (selectedDate) void getTrains(selectedDate);
   }, [selectedDate, getTrains, initialDate, initialTrains]);
-
-  useEffect(() => {
-    if (selectedDate && selectedTrain) {
-      router.prefetch(`/train/${selectedDate}/${selectedTrain}`);
-    }
-  }, [router, selectedDate, selectedTrain]);
 
   useEffect(() => {
     const isCurrentDate = selectedDate === dayjs().format("YYYY-MM-DD");
@@ -109,6 +109,11 @@ export function HomePage({ frontMessage, initialDate, initialTrains, maintenance
               trainsLoaded={trainsLoaded}
               allTrains={allTrains}
             />
+            {usingCachedTrains ? (
+              <p className="pwa-stale-note" role="status">
+                Ei verkkoyhteyttä. Junalista näytetään laitteen välimuistista.
+              </p>
+            ) : null}
             {mounted && !welcomeShown ? (
               <a style={{ color: "#757575", textDecoration: "underline" }} onClick={openWelcome}>
                 Uusi täällä? Lue infoteksti!

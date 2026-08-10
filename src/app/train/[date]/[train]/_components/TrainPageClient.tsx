@@ -2,7 +2,6 @@
 
 import { LeftCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button, Modal, message } from "antd";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { LegendModal } from "~/components/LegendModal";
 import { MiniMap } from "~/components/MiniMap";
@@ -39,7 +38,6 @@ export function TrainPageClient({
   wagons,
   trainDisplayInfo,
 }: Props) {
-  const router = useRouter();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [mainMapRef, setMainMapRef] = useState<HTMLDivElement | null>(null);
   const [fetchedMinutesAgo, setFetchedMinutesAgo] = useState<number | null>(null);
@@ -86,8 +84,16 @@ export function TrainPageClient({
   useSliderStyling(timeRange, selectedSeat, wagons, isIncomplete, missingRanges, colorblindMode);
 
   useEffect(() => {
-    router.prefetch(date ? `/?date=${date}` : "/");
-  }, [router, date]);
+    if (!("serviceWorker" in navigator) || !navigator.onLine) return;
+
+    void navigator.serviceWorker.ready.then((registration) => {
+      registration.active?.postMessage({
+        type: "CACHE_TRAIN",
+        url: `/train/${date}/${train.trainNumber}`,
+      });
+      registration.active?.postMessage({ type: "CACHE_HOME", url: `/?date=${date}` });
+    });
+  }, [date, train.trainNumber]);
 
   useDraggableMap(mainMapRef, setSelectedSeat, changeSeatSelection);
 
@@ -112,7 +118,7 @@ export function TrainPageClient({
         </Modal>
       ) : null}
 
-      <div style={{ display: "flex", flexDirection: "column" }}>
+      <div data-pwa-train-page style={{ display: "flex", flexDirection: "column" }}>
         <div style={{ flex: 1 }}>
           <div
             style={{
@@ -123,7 +129,11 @@ export function TrainPageClient({
               alignItems: "center",
             }}
           >
-            <Button onClick={() => router.push(date ? `/?date=${date}` : "/")}>
+            <Button
+              onClick={() => {
+                window.location.assign(date ? `/?date=${date}` : "/");
+              }}
+            >
               <LeftCircleOutlined /> Takaisin
             </Button>
             <h1 className="train-title">
@@ -264,8 +274,6 @@ export function TrainPageClient({
 }
 
 export function TrainNotFound({ date, tooOld }: { date?: string; tooOld: boolean }) {
-  const router = useRouter();
-
   return (
     <div style={{ textAlign: "center" }}>
       {tooOld ? <h1>Juna on lähtenyt jo aikoja sitten...</h1> : <h1>Junaa ei löytynyt...</h1>}
@@ -275,7 +283,7 @@ export function TrainNotFound({ date, tooOld }: { date?: string; tooOld: boolean
           height: "40px",
           fontSize: "16px",
         }}
-        onClick={() => router.push(date ? `/?date=${date}` : "/")}
+        onClick={() => window.location.assign(date ? `/?date=${date}` : "/")}
       >
         <LeftCircleOutlined /> Takaisin
       </Button>

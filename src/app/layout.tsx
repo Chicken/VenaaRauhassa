@@ -5,11 +5,22 @@ import type { ReactNode } from "react";
 import { getBaseURL } from "~/lib/deployment";
 import { env } from "~/lib/env";
 import "~/styles/global.css";
+import { PwaProvider } from "./_components/PwaProvider";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
-  icons: { icon: "/vr_favicon.png" },
+  applicationName: "VenaaRauhassa",
+  icons: {
+    icon: "/vr_favicon.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "VenaaRauhassa",
+  },
+  formatDetection: { telephone: false },
   openGraph: { type: "website" },
 };
 
@@ -45,7 +56,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </>
         ) : null}
         <AntdRegistry>
-          <Providers>{children}</Providers>
+          <PwaProvider>
+            <Providers>{children}</Providers>
+          </PwaProvider>
         </AntdRegistry>
       </body>
     </html>

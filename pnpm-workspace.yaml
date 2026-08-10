@@ -1,4 +1,6 @@
 allowBuilds:
+  "@swc/core": false
   better-sqlite3: true
+  esbuild: true
   sharp: true
   unrs-resolver: true

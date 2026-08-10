@@ -1,7 +1,6 @@
 import { StarFilled, StarOutlined } from "@ant-design/icons";
 import { Button, DatePicker, Select } from "antd";
 import dayjs from "dayjs";
-import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useStickyState } from "~/lib/hooks/useStickyState";
 import type { AllTrains } from "~/types";
@@ -35,7 +34,6 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
 }) => {
   const [trainLoading, setTrainLoading] = useState<boolean>(false);
   const [favorites, setFavorites] = useStickyState<string[]>("trainFavorites", []);
-  const router = useRouter();
 
   const toggleFavorite = (value: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -54,11 +52,11 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
         defaultValue={dayjs(initialDate)}
         style={pickerStyle}
         onChange={(_date, dateString) => {
+          setSelectedTrain(null);
           if (dateString && typeof dateString === "string") {
             setSelectedDate(dateString.split(".").reverse().join("-"));
           } else {
             setSelectedDate(null);
-            setSelectedTrain(null);
           }
         }}
         format="DD.MM.YYYY"
@@ -133,7 +131,7 @@ export const TrainSelector: React.FC<TrainSelectorProps> = ({
         loading={trainLoading}
         onClick={() => {
           setTrainLoading(true);
-          router.push(`/train/${selectedDate}/${selectedTrain}`);
+          window.location.assign(`/train/${selectedDate}/${selectedTrain}`);
         }}
       >
         Jatka
