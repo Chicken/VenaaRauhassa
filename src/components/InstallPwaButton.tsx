@@ -1,9 +1,10 @@
 "use client";
 
-import { DownloadOutlined, ExportOutlined } from "@ant-design/icons";
+import { CloseOutlined, DownloadOutlined, ExportOutlined } from "@ant-design/icons";
 import { Button, Modal } from "antd";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useStickyState } from "~/lib/hooks/useStickyState";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -21,6 +22,7 @@ export function InstallPwaButton() {
   const [showIosHelp, setShowIosHelp] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [installed, setInstalled] = useState(true);
+  const [minimized, setMinimized] = useStickyState("pwaInstallMinimized", false);
 
   useEffect(() => {
     const navigatorWithStandalone = navigator as NavigatorWithStandalone;
@@ -71,16 +73,44 @@ export function InstallPwaButton() {
 
   return (
     <>
-      <div className="pwa-install-card">
-        <Image src="/vr_favicon.png" width={44} height={44} alt="" />
-        <div>
-          <strong>VenaaRauhassa sovelluksena</strong>
-          <span>Asenna sovellus ja pidä viimeisimmät junakartat mukana verkkoyhteyden pettäessä.</span>
-        </div>
-        <Button icon={<DownloadOutlined />} onClick={() => void install()}>
-          Asenna
+      {minimized ? (
+        <Button
+          className="footer-action-button pwa-install-compact"
+          icon={<DownloadOutlined />}
+          onClick={() => void install()}
+        >
+          Asenna sovellus
         </Button>
-      </div>
+      ) : (
+        <div className="pwa-install-card">
+          <Image src="/vr_favicon.png" width={44} height={44} alt="" />
+          <div>
+            <strong>VenaaRauhassa sovelluksena</strong>
+            <span>
+              Asenna sovellus ja pidä viimeisimmät junakartat mukana verkkoyhteyden pettäessä.
+            </span>
+          </div>
+          <Button
+            className="pwa-install-primary"
+            icon={<DownloadOutlined />}
+            onClick={() => void install()}
+          >
+            Asenna
+          </Button>
+          <button
+            className="pwa-install-dismiss"
+            type="button"
+            aria-label="Pienennä asennuskehotus"
+            title="Pienennä"
+            onClick={() => {
+              setMinimized(true);
+              track("PWA Install Minimized");
+            }}
+          >
+            <CloseOutlined aria-hidden />
+          </button>
+        </div>
+      )}
 
       <Modal
         title="Asenna VenaaRauhassa"

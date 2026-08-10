@@ -10,19 +10,13 @@ type FooterProps = {
 export const Footer: React.FC<FooterProps> = ({ setIsFbModalOpen, onInfoClick }) => {
   return (
     <div className="footer">
-      <InstallPwaButton />
+      <div className="footer-actions">
+        <InstallPwaButton />
 
-      <Button
-        onClick={() => setIsFbModalOpen(true)}
-        style={{
-          fontWeight: 500,
-          height: "40px",
-          fontSize: "16px",
-          marginBottom: "10px",
-        }}
-      >
-        💬 Anna palautetta
-      </Button>
+        <Button className="footer-action-button" onClick={() => setIsFbModalOpen(true)}>
+          💬 Anna palautetta
+        </Button>
+      </div>
 
       <p style={{ color: "#757575" }}>
         <a

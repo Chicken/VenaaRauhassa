@@ -79,6 +79,22 @@ body {
   text-align: center;
 }
 
+.footer-actions {
+  display: grid;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  grid-template-columns: auto auto;
+  gap: 10px;
+}
+
+.footer-action-button.ant-btn {
+  height: 40px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
 /* Wahonmap */
 .wagonClass {
   cursor: grab;
@@ -365,12 +381,13 @@ body {
   box-sizing: border-box;
   align-items: center;
   padding: 14px 16px;
-  margin: 0 auto 18px;
+  margin: 0 auto 8px;
   border: 1px solid #b9dfca;
   border-left: 4px solid #00a149;
   border-radius: 8px;
   background: linear-gradient(110deg, #eff9f3, #fdf6ee);
-  grid-template-columns: auto 1fr auto;
+  grid-column: 1 / -1;
+  grid-template-columns: auto 1fr auto auto;
   gap: 12px;
   text-align: left;
 }
@@ -395,6 +412,30 @@ body {
   color: #58655f;
   font-size: 13px;
   line-height: 1.4;
+}
+
+.pwa-install-dismiss {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #54625c;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pwa-install-dismiss:hover {
+  color: #24513e;
+  background: rgb(0 161 73 / 9%);
+}
+
+.pwa-install-dismiss:focus-visible {
+  outline: 3px solid rgb(0 161 73 / 35%);
+  outline-offset: 2px;
 }
 
 .pwa-install-instruction {
@@ -498,11 +539,21 @@ body {
     font-size: 13px;
   }
 
-  .pwa-install-card {
-    grid-template-columns: auto 1fr;
+  .footer-action-button.ant-btn {
+    padding-inline: 8px;
+    font-size: 14px;
   }
 
-  .pwa-install-card .ant-btn {
+  .pwa-install-card {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .pwa-install-card .pwa-install-primary {
     grid-column: 1 / -1;
+  }
+
+  .pwa-install-card .pwa-install-dismiss {
+    grid-row: 1;
+    grid-column: 3;
   }
 }
