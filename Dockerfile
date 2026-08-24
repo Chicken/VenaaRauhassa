@@ -1,5 +1,5 @@
-FROM --platform=$BUILDPLATFORM node:20-alpine AS base_build
-FROM node:20-alpine AS base_target
+FROM --platform=$BUILDPLATFORM node:22-alpine AS base_build
+FROM node:22-alpine AS base_target
 
 
 
